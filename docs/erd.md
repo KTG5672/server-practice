@@ -1,2 +1,2 @@
 ## ERD
-![img.png](img/erd.png)
+![img.png](/docs/img/erd.png)
