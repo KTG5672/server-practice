@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.user.domain.infrastructure.persistence;
+package kr.hhplus.be.server.user.infrastructure.persistence;
 
 import java.util.Optional;
 import kr.hhplus.be.server.user.domain.model.User;
