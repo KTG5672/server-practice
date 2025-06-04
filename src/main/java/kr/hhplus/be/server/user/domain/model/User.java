@@ -8,9 +8,9 @@ import kr.hhplus.be.server.point.domain.model.Point;
  */
 public class User {
 
-    private final String id;
-    private final String email;
-    private final String password;
+    private String id;
+    private String email;
+    private String password;
     private Point point;
 
     public User(String id, String email, String password, Point point) {
