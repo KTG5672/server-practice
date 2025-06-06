@@ -18,6 +18,11 @@ public class ReserveSeatService implements ReserveSeatUseCase {
         this.reservationRepository = reservationRepository;
     }
 
+    /**
+     * 좌석 예약 메서드
+     * - 예약하려는 좌석에 활성된 예약이 있으면 AlreadyReservedSeatException 예외 발생
+     * @param reserveSeatCommand 좌석 예약 입력
+     */
     @Override
     public void reserveSeat(ReserveSeatCommand reserveSeatCommand) {
         String userId = reserveSeatCommand.userId();
