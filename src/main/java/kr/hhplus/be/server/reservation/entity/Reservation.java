@@ -11,12 +11,14 @@ public class Reservation {
     private String userId;
     private Long seatId;
     private ReservationStatus status;
+    private int price;
 
-    public Reservation(Long id, String userId, Long seatId, ReservationStatus status) {
+    public Reservation(Long id, String userId, Long seatId, ReservationStatus status, int price) {
         this.id = id;
         this.userId = userId;
         this.seatId = seatId;
         this.status = status;
+        this.price = price;
     }
 
     /**
@@ -25,8 +27,8 @@ public class Reservation {
      * @param seatId : 좌석 식별자
      * @return Reservation : HOLD 상태의 새로운 객체
      */
-    public static Reservation hold(String userId, Long seatId) {
-        return new Reservation(null, userId, seatId, ReservationStatus.HOLD);
+    public static Reservation holdOf(String userId, Long seatId, int price) {
+        return new Reservation(null, userId, seatId, ReservationStatus.HOLD, price);
     }
 
     /**
@@ -51,5 +53,9 @@ public class Reservation {
 
     public ReservationStatus getStatus() {
         return status;
+    }
+
+    public int getPrice() {
+        return price;
     }
 }

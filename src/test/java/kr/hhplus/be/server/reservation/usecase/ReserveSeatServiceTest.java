@@ -7,10 +7,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.ReservationStatus;
 import kr.hhplus.be.server.reservation.entity.exception.AlreadyReservedSeatException;
+import kr.hhplus.be.server.seat.entity.Seat;
+import kr.hhplus.be.server.seat.entity.SeatRepository;
+import kr.hhplus.be.server.seat.entity.exception.SeatNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,12 +29,15 @@ class ReserveSeatServiceTest {
     @Mock
     ReservationRepository reservationRepository;
 
+    @Mock
+    SeatRepository seatRepository;
+
     ReserveSeatService reserveSeatService;
 
 
     @BeforeEach
     void setUp() {
-        reserveSeatService = new ReserveSeatService(reservationRepository);
+        reserveSeatService = new ReserveSeatService(reservationRepository, seatRepository);
     }
 
     /**
@@ -42,8 +49,12 @@ class ReserveSeatServiceTest {
         // given
         Long seatId = 1L;
         String userId = "user-1";
+        int price = 1000;
+        when(seatRepository.findById(seatId)).thenReturn(
+            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
-        ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(Reservation.class);
+        ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
+            Reservation.class);
 
         // when
         reserveSeatService.reserveSeat(reserveSeatCommand);
@@ -57,6 +68,47 @@ class ReserveSeatServiceTest {
     }
 
     /**
+     * 예약시 좌석 식별자를 이용하여 가격을 구하는지 검증한다.
+     */
+    @Test
+    @DisplayName("에약시 좌석 식별자를 이용하여 가격을 구한다.")
+    void 예약시_좌석_식별자로_가격을_구한다() {
+        // given
+        Long seatId = 1L;
+        String userId = "user-1";
+        int price = 1000;
+        when(seatRepository.findById(seatId)).thenReturn(
+            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
+        ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
+            Reservation.class);
+        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
+        // when
+        reserveSeatService.reserveSeat(reserveSeatCommand);
+        // then
+        verify(reservationRepository).save(reservationArgumentCaptor.capture());
+        Reservation result = reservationArgumentCaptor.getValue();
+        assertThat(result.getPrice()).isEqualTo(price);
+    }
+    /**
+     * 예약시 좌석 식별자를 이용하여 가격을 구할때 좌석이 없으면 SeatNotFoundException 예외가 발생하는지 검증한다.
+     */
+    @Test
+    @DisplayName("에약시 좌석 식별자를 이용하여 좌석 정보를 얻을때 없으면 예외가 발생한다.")
+    void 예약시_좌석_식별자로_좌석_정보를_얻을때_없으면_예외가_발생한다() {
+        // given
+        Long seatId = 1L;
+        String userId = "user-1";
+        when(seatRepository.findById(seatId)).thenReturn(Optional.empty());
+        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
+        // when
+        var thrownBy = assertThatThrownBy(
+            () -> reserveSeatService.reserveSeat(reserveSeatCommand));
+        // then
+        thrownBy.isInstanceOf(SeatNotFoundException.class)
+            .hasMessageContaining(seatId.toString());
+    }
+
+    /**
      * 예약 하려는 좌석에 취소가 아닌 예약 정보가 있을 경우 AlreadyReservedSeatException 예외를 발생 시키는지 검증한다.
      */
     @Test
@@ -65,11 +117,14 @@ class ReserveSeatServiceTest {
         // given
         Long seatId = 1L;
         String userId = "user-1";
-        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
+        int price = 1000;
+        when(seatRepository.findById(seatId)).thenReturn(
+            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
-                Reservation.hold("user-2", seatId)
-                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED)));
+                Reservation.holdOf("user-2", seatId, 1000)
+                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED, price)));
+        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         // when
         var thrownBy = assertThatThrownBy(
             () -> reserveSeatService.reserveSeat(reserveSeatCommand));
@@ -87,11 +142,14 @@ class ReserveSeatServiceTest {
         // given
         Long seatId = 1L;
         String userId = "user-1";
-        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
+        int price = 1000;
+        when(seatRepository.findById(seatId)).thenReturn(
+            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
-                new Reservation(null, "user-2", seatId, ReservationStatus.CANCELLED)
-                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED)));
+                new Reservation(null, "user-2", seatId, ReservationStatus.CANCELLED, 1000)
+                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED, 2000)));
+        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         // when
         reserveSeatService.reserveSeat(reserveSeatCommand);
         // then
