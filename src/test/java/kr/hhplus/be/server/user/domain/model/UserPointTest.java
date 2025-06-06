@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import kr.hhplus.be.server.point.domain.model.Point;
+import kr.hhplus.be.server.user.domain.exception.NotEnoughPointException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -151,6 +152,21 @@ class UserPointTest {
         var throwableAssert = assertThatThrownBy(() -> user.usePoint(-1));
         // then
         throwableAssert.isInstanceOf(IllegalStateException.class);
+    }
+
+    /**
+     * 유저 포인트가 사용 포인트보다 적을때 NotEnoughPointException 예외가 발생하는지 검증한다.
+     */
+    @Test
+    @DisplayName("유저 포인트가 사용 포인트보다 적을때 예외가 발생한다.")
+    void 유저_포인트가_사용_포인트보다_적을때_예외가_발생한다() {
+        // given
+        User user = getNewTestUser();
+        user.chargePoint(1_000L);
+        // when
+        var throwableAssert = assertThatThrownBy(() -> user.usePoint(2_000));
+        // then
+        throwableAssert.isInstanceOf(NotEnoughPointException.class);
     }
 
 
