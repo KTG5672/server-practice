@@ -39,6 +39,13 @@ public class Reservation {
         return this.status != ReservationStatus.CANCELLED;
     }
 
+    /**
+     * 예약 상태를 Completed 로 변경
+     */
+    public void completed() {
+        this.status = ReservationStatus.COMPLETED;
+    }
+
     public Long getId() {
         return id;
     }
