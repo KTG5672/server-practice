@@ -22,12 +22,15 @@ public class ProcessPaymentService implements ProcessPaymentUseCase{
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
+    private final PaymentFailHandler paymentFailHandler;
 
     public ProcessPaymentService(PaymentRepository paymentRepository,
-        ReservationRepository reservationRepository, UserRepository userRepository) {
+        ReservationRepository reservationRepository, UserRepository userRepository,
+        PaymentFailHandler paymentFailHandler) {
         this.paymentRepository = paymentRepository;
         this.reservationRepository = reservationRepository;
         this.userRepository = userRepository;
+        this.paymentFailHandler = paymentFailHandler;
     }
 
     /**
@@ -53,10 +56,10 @@ public class ProcessPaymentService implements ProcessPaymentUseCase{
             useUserPoint(user, price);
         } catch (RuntimeException e) {
             // 실패 시 상태(FAIL) 업데이트
-            paymentFailed(saved);
+            paymentFailHandler.handlePaymentFailed(saved);
             throw new ProcessPaymentFailException(saved.getId(), e.getMessage());
         }
-        paymentSuccess(saved);
+        handlePaymentSuccess(saved);
         completeReservation(reservation);
     }
 
@@ -65,13 +68,8 @@ public class ProcessPaymentService implements ProcessPaymentUseCase{
         reservationRepository.save(reservation);
     }
 
-    private void paymentSuccess(Payment payment) {
+    private void handlePaymentSuccess(Payment payment) {
         payment.success();
-        paymentRepository.save(payment);
-    }
-
-    private void paymentFailed(Payment payment) {
-        payment.failed();
         paymentRepository.save(payment);
     }
 

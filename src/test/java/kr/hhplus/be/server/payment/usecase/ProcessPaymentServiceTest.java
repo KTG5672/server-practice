@@ -40,11 +40,14 @@ class ProcessPaymentServiceTest {
     UserRepository userRepository;
 
     ProcessPaymentService processPaymentService;
+    PaymentFailHandler paymentFailHandler;
 
     @BeforeEach
     void setUp() {
+        paymentFailHandler = new PaymentFailHandler(paymentRepository);
         processPaymentService = new ProcessPaymentService(paymentRepository, reservationRepository,
-            userRepository);
+            userRepository, paymentFailHandler);
+
     }
 
     /**
