@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import kr.hhplus.be.server.common.application.lock.LockManager;
 import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.PaymentStatus;
@@ -40,6 +41,9 @@ class ProcessPaymentServiceTest {
     @Mock
     UserRepository userRepository;
 
+    @Mock
+    LockManager lockManager;
+
     ProcessPaymentService processPaymentService;
     PaymentFailHandler paymentFailHandler;
 
@@ -47,7 +51,7 @@ class ProcessPaymentServiceTest {
     void setUp() {
         paymentFailHandler = new PaymentFailHandler(paymentRepository);
         processPaymentService = new ProcessPaymentService(paymentRepository, reservationRepository,
-            userRepository, paymentFailHandler);
+            userRepository, paymentFailHandler, lockManager);
 
     }
 
@@ -354,6 +358,42 @@ class ProcessPaymentServiceTest {
         // then
         thrownBy.isInstanceOf(CannotPayReservationException.class)
             .hasMessageContaining("COMPLETED");
+    }
+
+
+    /**
+     * 결제 진행시 LockManager를 이용하여 Lock을 정상적으로 잠금/해제하는지 검증한다.
+     */
+    @Test
+    @DisplayName("결제 진행시 유저 식별자를 key로 Lock을 사용한다.")
+    void 결제_진행시_유저_식별자를_key로_Lock을_사용한다() {
+        // given
+        Long reservationId = 1L;
+        String userId = "user-1";
+        Long seatId = 3L;
+        int price = 1000;
+
+        // 예약 정보 세팅
+        when(reservationRepository.findById(reservationId)).thenReturn(
+            Optional.of(Reservation.holdOf(userId, seatId, price))
+        );
+
+        // 유저 정보 세팅
+        User user = User.of(userId, "test@test.com", "1234");
+        user.chargePoint(2_000);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        Payment mockPayment = Payment.processOf(userId, reservationId, price);
+        when(paymentRepository.save(any())).thenReturn(mockPayment);
+        ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
+
+        // when
+        processPaymentService.processPayment(processPaymentCommand);
+
+        // then
+        verify(lockManager).lock("payment:" + userId);
+        verify(lockManager).unlock("payment:" + userId);
+
     }
 
 

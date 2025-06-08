@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import kr.hhplus.be.server.common.application.lock.LockManager;
 import kr.hhplus.be.server.point.domain.model.PointTransactionHistory;
 import kr.hhplus.be.server.point.domain.model.TransactionType;
 import kr.hhplus.be.server.point.domain.repository.PointTransactionHistoryRepository;
@@ -29,11 +30,15 @@ class PointUseServiceTest {
     @Mock
     PointTransactionHistoryRepository pointTransactionHistoryRepository;
 
+    @Mock
+    LockManager lockManager;
+
     PointUseService pointUseService;
 
     @BeforeEach
     void setUp() {
-        pointUseService = new PointUseService(userRepository, pointTransactionHistoryRepository);
+        pointUseService = new PointUseService(userRepository, pointTransactionHistoryRepository,
+            lockManager);
     }
 
     /**
@@ -101,5 +106,24 @@ class PointUseServiceTest {
         assertThat(saved.getUserId()).isEqualTo(user.getId());
         assertThat(saved.getAmount()).isEqualTo(useAmount);
         assertThat(saved.getType()).isEqualTo(TransactionType.USE);
+    }
+
+    /**
+     * 포인트 사용시 LockManager를 이용하여 Lock을 정상적으로 잠금/해제하는지 검증한다.
+     */
+    @Test
+    @DisplayName("포인트 사용시 유저 식별자를 key로 Lock을 사용한다.")
+    void 포인트_사용시_유저_식별자를_key로_Lock을_사용한다() {
+        // given
+        User user = User.of("0000001", "test@test.com", "1234");
+        user.chargePoint(2_000L);
+        long useAmount = 1_000L;
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        // when
+        pointUseService.usePoint(user.getId(), useAmount);
+        // then
+        verify(lockManager).lock(user.getId());
+        verify(lockManager).unlock(user.getId());
+
     }
 }

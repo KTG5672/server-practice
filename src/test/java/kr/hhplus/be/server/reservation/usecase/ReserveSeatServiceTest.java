@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import kr.hhplus.be.server.common.application.lock.LockManager;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.ReservationStatus;
@@ -15,6 +16,7 @@ import kr.hhplus.be.server.reservation.entity.exception.AlreadyReservedSeatExcep
 import kr.hhplus.be.server.seat.entity.Seat;
 import kr.hhplus.be.server.seat.entity.SeatRepository;
 import kr.hhplus.be.server.seat.entity.exception.SeatNotFoundException;
+import kr.hhplus.be.server.user.domain.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,12 +34,16 @@ class ReserveSeatServiceTest {
     @Mock
     SeatRepository seatRepository;
 
+    @Mock
+    LockManager lockManager;
+
     ReserveSeatService reserveSeatService;
 
 
     @BeforeEach
     void setUp() {
-        reserveSeatService = new ReserveSeatService(reservationRepository, seatRepository);
+        reserveSeatService = new ReserveSeatService(reservationRepository, seatRepository,
+            lockManager);
     }
 
     /**
@@ -89,6 +95,7 @@ class ReserveSeatServiceTest {
         Reservation result = reservationArgumentCaptor.getValue();
         assertThat(result.getPrice()).isEqualTo(price);
     }
+
     /**
      * 예약시 좌석 식별자를 이용하여 가격을 구할때 좌석이 없으면 SeatNotFoundException 예외가 발생하는지 검증한다.
      */
@@ -154,6 +161,29 @@ class ReserveSeatServiceTest {
         reserveSeatService.reserveSeat(reserveSeatCommand);
         // then
         verify(reservationRepository).save(any());
+    }
+
+    /**
+     * 좌석 예약시 LockManager를 이용하여 Lock을 정상적으로 잠금/해제하는지 검증한다.
+     */
+    @Test
+    @DisplayName("좌석 예약시 좌석 식별자를 key로 Lock을 사용한다.")
+    void 좌석_예약시_좌석_식별자를_key로_Lock을_사용한다() {
+        // given
+        Long seatId = 1L;
+        String userId = "user-1";
+        int price = 1000;
+        when(seatRepository.findById(seatId)).thenReturn(
+            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
+        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
+
+        // when
+        reserveSeatService.reserveSeat(reserveSeatCommand);
+
+        // then
+        verify(lockManager).lock("seat:" + seatId);
+        verify(lockManager).unlock("seat:" + seatId);
+
     }
 
 }
