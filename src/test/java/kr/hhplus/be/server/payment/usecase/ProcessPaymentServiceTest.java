@@ -15,6 +15,7 @@ import kr.hhplus.be.server.payment.entity.PaymentStatus;
 import kr.hhplus.be.server.payment.entity.exception.ProcessPaymentFailException;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
+import kr.hhplus.be.server.reservation.entity.exception.CannotPayReservationException;
 import kr.hhplus.be.server.reservation.entity.exception.ReservationNotFoundException;
 import kr.hhplus.be.server.user.domain.exception.UserNotFoundException;
 import kr.hhplus.be.server.user.domain.model.User;
@@ -318,6 +319,41 @@ class ProcessPaymentServiceTest {
         verify(paymentRepository, times(2)).save(paymentArgumentCaptor.capture());
         Payment payment = paymentArgumentCaptor.getAllValues().get(1);
         assertThat(payment.getStats()).isEqualTo(PaymentStatus.FAIL);
+    }
+
+
+    /**
+     * 결제 시 예약 상태가 HOLD(임시배정) 상태가 아니면 예외가 발생하는지 검증한다.
+     */
+    @Test
+    @DisplayName("결제시 예약 상태가 HOLD가 아니면 예외가 발생한다.")
+    void 결제시_예약_상태가_HOLD가_아니면_예외가_발생한다() {
+        // given
+        Long reservationId = 1L;
+        String userId = "user-1";
+        Long seatId = 3L;
+        int price = 1000;
+
+        Reservation reservation = Reservation.holdOf(userId, seatId, price);
+        reservation.completed();
+        when(reservationRepository.findById(reservationId)).thenReturn(
+            Optional.of(reservation)
+        );
+
+
+        // 유저 정보 세팅
+        User user = User.of(userId, "test@test.com", "1234");
+        user.chargePoint(2_000);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
+
+        // when
+        var thrownBy = assertThatThrownBy(
+            () -> processPaymentService.processPayment(processPaymentCommand));
+        // then
+        thrownBy.isInstanceOf(CannotPayReservationException.class)
+            .hasMessageContaining("COMPLETED");
     }
 
 

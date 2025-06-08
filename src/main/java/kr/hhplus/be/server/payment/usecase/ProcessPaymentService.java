@@ -5,6 +5,8 @@ import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.exception.ProcessPaymentFailException;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
+import kr.hhplus.be.server.reservation.entity.ReservationStatus;
+import kr.hhplus.be.server.reservation.entity.exception.CannotPayReservationException;
 import kr.hhplus.be.server.reservation.entity.exception.ReservationNotFoundException;
 import kr.hhplus.be.server.user.domain.exception.UserNotFoundException;
 import kr.hhplus.be.server.user.domain.model.User;
@@ -48,6 +50,7 @@ public class ProcessPaymentService implements ProcessPaymentUseCase{
         Reservation reservation = getReservation(reservationId);
         User user = getUser(userId);
 
+        validateReservationStatus(reservation);
         int price = reservation.getPrice();
         Payment payment = Payment.processOf(userId, reservationId, price);
 
@@ -61,6 +64,12 @@ public class ProcessPaymentService implements ProcessPaymentUseCase{
         }
         handlePaymentSuccess(saved);
         completeReservation(reservation);
+    }
+
+    private void validateReservationStatus(Reservation reservation) {
+        if (reservation.getStatus() != ReservationStatus.HOLD) {
+            throw new CannotPayReservationException(reservation.getId(), reservation.getStatus());
+        }
     }
 
     private void completeReservation(Reservation reservation) {
