@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
-public class ProcessPaymentService implements ProcessPaymentUseCase{
+public class ProcessPaymentService implements ProcessPaymentUseCase {
 
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
