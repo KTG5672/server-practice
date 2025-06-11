@@ -7,8 +7,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class PointTransactionHistoryJpaRepository implements PointTransactionHistoryRepository {
 
+    private final PointTransactionHistoryJpaDataRepository pointTransactionHistoryJpaDataRepository;
+
+    public PointTransactionHistoryJpaRepository(
+        PointTransactionHistoryJpaDataRepository pointTransactionHistoryJpaDataRepository) {
+        this.pointTransactionHistoryJpaDataRepository = pointTransactionHistoryJpaDataRepository;
+    }
+
     @Override
     public PointTransactionHistory save(PointTransactionHistory pointTransactionHistory) {
-        return null;
+        return pointTransactionHistoryJpaDataRepository.save(pointTransactionHistory);
     }
 }
