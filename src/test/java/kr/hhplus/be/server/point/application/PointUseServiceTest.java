@@ -122,8 +122,8 @@ class PointUseServiceTest {
         // when
         pointUseService.usePoint(user.getId(), useAmount);
         // then
-        verify(lockManager).lock(user.getId());
-        verify(lockManager).unlock(user.getId());
+        verify(lockManager).lock("point:" + user.getId());
+        verify(lockManager).unlock("point:" + user.getId());
 
     }
 }

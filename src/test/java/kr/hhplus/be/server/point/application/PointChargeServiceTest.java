@@ -118,8 +118,8 @@ class PointChargeServiceTest {
         // when
         pointChargeService.chargePoint(user.getId(), chargeAmount);
         // then
-        verify(lockManager).lock(user.getId());
-        verify(lockManager).unlock(user.getId());
+        verify(lockManager).lock("point:" + user.getId());
+        verify(lockManager).unlock("point:" + user.getId());
 
     }
 }
