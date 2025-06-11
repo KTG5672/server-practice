@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
  * - 상태 (결제완료/실패) 변경 기능
  */
 @Entity
+@Table(name = "payments")
 public class Payment {
 
     @Id

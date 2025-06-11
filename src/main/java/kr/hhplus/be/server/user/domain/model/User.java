@@ -8,6 +8,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import kr.hhplus.be.server.point.domain.model.Point;
 import kr.hhplus.be.server.user.domain.exception.NotEnoughPointException;
 
@@ -15,6 +16,7 @@ import kr.hhplus.be.server.user.domain.exception.NotEnoughPointException;
  * 유저 도메인 - 포인트 충전/사용 기능 제공
  */
 @Entity
+@Table(name = "users")
 public class User {
 
     @Id

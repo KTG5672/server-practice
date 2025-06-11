@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 /**
  * 예약 도메인
@@ -14,6 +15,7 @@ import jakarta.persistence.Id;
  * - 유효 상태 검사 기능 제공
  */
 @Entity
+@Table(name = "reservations")
 public class Reservation {
 
     @Id
