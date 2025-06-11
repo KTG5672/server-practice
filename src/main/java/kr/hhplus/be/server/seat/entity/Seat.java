@@ -1,12 +1,31 @@
 package kr.hhplus.be.server.seat.entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+@Entity
 public class Seat {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+
+    @Column(name = "schedule_id", nullable = false)
     private Long scheduleId;
+
+    @Column(name = "zone")
     private String zone;
+
+    @Column(name = "no")
     private int no;
+
+    @Column(name = "price")
     private int price;
+
+    protected Seat() {}
 
     public Seat(Long id, Long scheduleId, String zone, int no, int price) {
         this.id = id;
