@@ -3,8 +3,8 @@ package kr.hhplus.be.server.common.infrastructure.queue;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 import java.util.Objects;
-import kr.hhplus.be.server.common.application.lock.queue.QueueTokenInfo;
-import kr.hhplus.be.server.common.application.lock.queue.QueueTokenStatus;
+import kr.hhplus.be.server.common.application.queue.QueueTokenInfo;
+import kr.hhplus.be.server.common.application.queue.QueueTokenStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

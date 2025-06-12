@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.common.application.lock.queue;
+package kr.hhplus.be.server.common.application.queue;
 
 import org.springframework.stereotype.Service;
 

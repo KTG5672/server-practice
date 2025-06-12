@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.common.application.lock.queue;
+package kr.hhplus.be.server.common.application.queue;
 
 /**
  * 대기열 토큰 상태 Enum
