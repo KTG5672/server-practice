@@ -40,10 +40,10 @@ public class ReserveSeatService implements ReserveSeatUseCase {
      * @param reserveSeatCommand 좌석 예약 입력
      */
     @Override
-    public void reserveSeat(ReserveSeatCommand reserveSeatCommand) {
+    public Long reserveSeat(ReserveSeatCommand reserveSeatCommand) {
         String userId = reserveSeatCommand.userId();
         Long seatId = reserveSeatCommand.seatId();
-
+        Long reservationId;
         lockManager.lock("seat:" + seatId);
         try {
             int price = getSeatPrice(seatId);
@@ -51,12 +51,13 @@ public class ReserveSeatService implements ReserveSeatUseCase {
             Reservation holdReservation = Reservation.holdOf(userId, seatId, price);
 
             Reservation saved = reservationRepository.save(holdReservation);
+            reservationId = saved.getId();
             // 임시배정 상태를 저장(유효시간 5분)
-            reservationHoldManager.hold(saved.getId());
+            reservationHoldManager.hold(reservationId);
         } finally {
             lockManager.unlock("seat:" + seatId);
         }
-
+        return reservationId;
     }
 
     private int getSeatPrice(Long seatId) {
