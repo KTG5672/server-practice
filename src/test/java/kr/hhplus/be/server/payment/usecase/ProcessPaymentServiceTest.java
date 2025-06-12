@@ -15,6 +15,7 @@ import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.PaymentStatus;
 import kr.hhplus.be.server.payment.entity.exception.ProcessPaymentFailException;
 import kr.hhplus.be.server.reservation.entity.Reservation;
+import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.exception.CannotPayReservationException;
 import kr.hhplus.be.server.reservation.entity.exception.ReservationNotFoundException;
@@ -44,6 +45,9 @@ class ProcessPaymentServiceTest {
     @Mock
     LockManager lockManager;
 
+    @Mock
+    ReservationHoldManager reservationHoldManager;
+
     ProcessPaymentService processPaymentService;
     PaymentFailHandler paymentFailHandler;
 
@@ -51,7 +55,7 @@ class ProcessPaymentServiceTest {
     void setUp() {
         paymentFailHandler = new PaymentFailHandler(paymentRepository);
         processPaymentService = new ProcessPaymentService(paymentRepository, reservationRepository,
-            userRepository, paymentFailHandler, lockManager);
+            userRepository, paymentFailHandler, lockManager, reservationHoldManager);
 
     }
 
@@ -66,6 +70,8 @@ class ProcessPaymentServiceTest {
         String userId = "user-1";
         Long seatId = 3L;
         int price = 1000;
+
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
 
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
@@ -99,6 +105,9 @@ class ProcessPaymentServiceTest {
         // given
         Long reservationId = 1L;
         String userId = "user-1";
+
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
+
         when(reservationRepository.findById(any())).thenReturn(Optional.empty());
         ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
 
@@ -122,6 +131,8 @@ class ProcessPaymentServiceTest {
         String userId = "user-1";
         Long seatId = 3L;
         int price = 1000;
+
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
 
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
@@ -158,6 +169,8 @@ class ProcessPaymentServiceTest {
         Long seatId = 3L;
         int price = 1000;
 
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
+
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
@@ -186,6 +199,7 @@ class ProcessPaymentServiceTest {
         Long seatId = 3L;
         int price = 4000;
 
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
@@ -218,6 +232,8 @@ class ProcessPaymentServiceTest {
         String userId = "user-1";
         Long seatId = 3L;
         int price = 1000;
+
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
 
         // 예약 정보 세팅
         when(reservationRepository.findById(reservationId)).thenReturn(
@@ -260,6 +276,8 @@ class ProcessPaymentServiceTest {
         Long seatId = 3L;
         int price = 1000;
 
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
+
         // 예약 정보 세팅
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
@@ -298,6 +316,8 @@ class ProcessPaymentServiceTest {
         String userId = "user-1";
         Long seatId = 3L;
         int price = 3000;
+
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
 
         // 예약 정보 세팅
         when(reservationRepository.findById(reservationId)).thenReturn(
@@ -338,6 +358,8 @@ class ProcessPaymentServiceTest {
         Long seatId = 3L;
         int price = 1000;
 
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
+
         Reservation reservation = Reservation.holdOf(userId, seatId, price);
         reservation.completed();
         when(reservationRepository.findById(reservationId)).thenReturn(
@@ -373,6 +395,8 @@ class ProcessPaymentServiceTest {
         Long seatId = 3L;
         int price = 1000;
 
+        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
+
         // 예약 정보 세팅
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
@@ -395,7 +419,5 @@ class ProcessPaymentServiceTest {
         verify(lockManager).unlock("payment:" + userId);
 
     }
-
-
 
 }
