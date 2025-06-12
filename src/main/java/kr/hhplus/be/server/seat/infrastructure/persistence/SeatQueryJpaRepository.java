@@ -8,8 +8,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class SeatQueryJpaRepository implements SeatQueryRepository {
 
+    private final JpaSeatQueryRepository jpaSeatQueryRepository;
+
+    public SeatQueryJpaRepository(JpaSeatQueryRepository jpaSeatQueryRepository) {
+        this.jpaSeatQueryRepository = jpaSeatQueryRepository;
+    }
+
     @Override
     public List<SeatQueryResult> findSeatsWithAvailability(Long scheduleId) {
-        return List.of();
+        return jpaSeatQueryRepository.findSeatsWithAvailability(scheduleId);
     }
 }

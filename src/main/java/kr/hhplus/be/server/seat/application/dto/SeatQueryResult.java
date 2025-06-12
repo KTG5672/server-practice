@@ -9,9 +9,13 @@ public class SeatQueryResult {
     private String zone;
     private int no;
     private int price;
-    private boolean available;
+    private Boolean available;
 
-    public SeatQueryResult(Long id, String zone, int no, int price, boolean available) {
+    public SeatQueryResult(Long id, String zone, int no, int price) {
+        this(id, zone, no, price, null);
+    }
+
+    public SeatQueryResult(Long id, String zone, int no, int price, Boolean available) {
         this.id = id;
         this.zone = zone;
         this.no = no;
@@ -35,7 +39,7 @@ public class SeatQueryResult {
         return price;
     }
 
-    public boolean isAvailable() {
+    public Boolean isAvailable() {
         return available;
     }
 }
