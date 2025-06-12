@@ -7,4 +7,5 @@ public interface ReservationRepository {
     Reservation save(Reservation reservation);
     List<Reservation> findBySeatId(Long seatId);
     Optional<Reservation> findById(Long id);
+    List<Reservation> findByStatus(ReservationStatus status);
 }

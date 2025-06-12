@@ -1,6 +1,6 @@
 package kr.hhplus.be.server.point.application;
 
-import kr.hhplus.be.server.common.application.lock.LockManager;
+import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.point.domain.model.PointTransactionHistory;
 import kr.hhplus.be.server.point.domain.model.TransactionType;
 import kr.hhplus.be.server.point.domain.repository.PointTransactionHistoryRepository;

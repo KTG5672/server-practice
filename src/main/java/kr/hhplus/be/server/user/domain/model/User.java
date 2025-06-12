@@ -1,17 +1,42 @@
 package kr.hhplus.be.server.user.domain.model;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import kr.hhplus.be.server.point.domain.model.Point;
 import kr.hhplus.be.server.user.domain.exception.NotEnoughPointException;
 
 /**
  * 유저 도메인 - 포인트 충전/사용 기능 제공
  */
+@Entity
+@Table(name = "users")
 public class User {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
+
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
+
+    @Column(name = "password", nullable = false)
     private String password;
+
+    @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "amount",
+        column = @Column(name = "point"))
+    })
     private Point point;
+
+    protected User() {}
 
     public User(String id, String email, String password, Point point) {
         this.id = id;

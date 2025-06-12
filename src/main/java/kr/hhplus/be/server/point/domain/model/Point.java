@@ -1,13 +1,18 @@
 package kr.hhplus.be.server.point.domain.model;
 
+import jakarta.persistence.Embeddable;
+
 /**
  * 포인트 도메인 - 불변 객체로 충전, 사용 메서드 호출 시 새로운 Point 객체 반환
  */
+@Embeddable
 public class Point {
 
-    private final long amount;
+    private long amount;
 
     private static final long MAX_AMOUNT = 1_000_000;
+
+    protected Point() {}
 
     public Point(long amount) {
         if (isNegativeNumber(amount)) {

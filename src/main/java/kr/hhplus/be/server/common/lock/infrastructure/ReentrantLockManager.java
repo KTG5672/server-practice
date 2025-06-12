@@ -1,11 +1,11 @@
-package kr.hhplus.be.server.common.infrastructure.lock;
+package kr.hhplus.be.server.common.lock.infrastructure;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-import kr.hhplus.be.server.common.application.lock.LockManager;
+import kr.hhplus.be.server.common.lock.application.LockManager;
 import org.springframework.stereotype.Component;
 
 @Component

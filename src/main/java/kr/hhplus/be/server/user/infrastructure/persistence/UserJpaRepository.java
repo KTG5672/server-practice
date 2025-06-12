@@ -8,13 +8,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserJpaRepository implements UserRepository {
 
+    private final UserJpaDataRepository userJpaDataRepository;
+
+    public UserJpaRepository(UserJpaDataRepository userJpaDataRepository) {
+        this.userJpaDataRepository = userJpaDataRepository;
+    }
+
     @Override
     public Optional<User> findById(String id) {
-        return Optional.empty();
+        return userJpaDataRepository.findById(id);
     }
 
     @Override
     public User save(User user) {
-        return null;
+        return userJpaDataRepository.save(user);
     }
 }
