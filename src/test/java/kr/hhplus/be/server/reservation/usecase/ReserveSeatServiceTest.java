@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Optional;
 import kr.hhplus.be.server.common.application.lock.LockManager;
 import kr.hhplus.be.server.reservation.entity.Reservation;
+import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.ReservationStatus;
 import kr.hhplus.be.server.reservation.entity.exception.AlreadyReservedSeatException;
 import kr.hhplus.be.server.seat.entity.Seat;
 import kr.hhplus.be.server.seat.entity.SeatRepository;
 import kr.hhplus.be.server.seat.entity.exception.SeatNotFoundException;
-import kr.hhplus.be.server.user.domain.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,13 +37,16 @@ class ReserveSeatServiceTest {
     @Mock
     LockManager lockManager;
 
+    @Mock
+    ReservationHoldManager reservationHoldManager;
+
     ReserveSeatService reserveSeatService;
 
 
     @BeforeEach
     void setUp() {
         reserveSeatService = new ReserveSeatService(reservationRepository, seatRepository,
-            lockManager);
+            lockManager, reservationHoldManager);
     }
 
     /**
@@ -61,6 +64,8 @@ class ReserveSeatServiceTest {
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
             Reservation.class);
+
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(Reservation.holdOf(null, null, 0));
 
         // when
         reserveSeatService.reserveSeat(reserveSeatCommand);
@@ -88,6 +93,7 @@ class ReserveSeatServiceTest {
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
             Reservation.class);
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(Reservation.holdOf(null, null, 0));
         // when
         reserveSeatService.reserveSeat(reserveSeatCommand);
         // then
@@ -157,6 +163,7 @@ class ReserveSeatServiceTest {
                 new Reservation(null, "user-2", seatId, ReservationStatus.CANCELLED, 1000)
                 , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED, 2000)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(Reservation.holdOf(null, null, 0));
         // when
         reserveSeatService.reserveSeat(reserveSeatCommand);
         // then
@@ -176,7 +183,7 @@ class ReserveSeatServiceTest {
         when(seatRepository.findById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
-
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(Reservation.holdOf(null, null, 0));
         // when
         reserveSeatService.reserveSeat(reserveSeatCommand);
 
