@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import kr.hhplus.be.server.common.application.lock.LockManager;
+import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;

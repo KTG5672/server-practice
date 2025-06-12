@@ -1,11 +1,11 @@
-package kr.hhplus.be.server.common.infrastructure.queue;
+package kr.hhplus.be.server.common.queue.infrastructure;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
-import kr.hhplus.be.server.common.application.queue.QueueTokenInfo;
-import kr.hhplus.be.server.common.application.queue.QueueTokenManager;
-import kr.hhplus.be.server.common.application.queue.QueueTokenStatus;
+import kr.hhplus.be.server.common.queue.application.QueueTokenInfo;
+import kr.hhplus.be.server.common.queue.application.QueueTokenManager;
+import kr.hhplus.be.server.common.queue.application.QueueTokenStatus;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 

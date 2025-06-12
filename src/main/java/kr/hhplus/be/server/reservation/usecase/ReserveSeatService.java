@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.reservation.usecase;
 
 import java.util.List;
-import kr.hhplus.be.server.common.application.lock.LockManager;
+import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;

@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.common.application.queue;
+package kr.hhplus.be.server.common.queue.application;
 
 public interface QueueTokenManager {
 

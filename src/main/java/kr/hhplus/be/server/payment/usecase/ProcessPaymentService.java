@@ -1,6 +1,6 @@
 package kr.hhplus.be.server.payment.usecase;
 
-import kr.hhplus.be.server.common.application.lock.LockManager;
+import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.exception.ProcessPaymentFailException;
