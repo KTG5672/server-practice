@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
+import kr.hhplus.be.server.reservation.entity.ReservationStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -29,4 +30,10 @@ public class ReservationJpaGateway implements ReservationRepository {
     public Optional<Reservation> findById(Long id) {
         return reservationJpaDataRepository.findById(id);
     }
+
+    @Override
+    public List<Reservation> findByStatus(ReservationStatus status) {
+        return reservationJpaDataRepository.findByStatus(status);
+    }
+
 }

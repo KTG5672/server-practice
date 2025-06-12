@@ -10,11 +10,13 @@ import kr.hhplus.be.server.seat.entity.Seat;
 import kr.hhplus.be.server.seat.entity.SeatRepository;
 import kr.hhplus.be.server.seat.entity.exception.SeatNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 좌석 예약 서비스
  */
 @Service
+@Transactional
 public class ReserveSeatService implements ReserveSeatUseCase {
 
     private final ReservationRepository reservationRepository;

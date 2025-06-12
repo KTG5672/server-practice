@@ -136,7 +136,7 @@ class ReserveSeatServiceTest {
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
                 Reservation.holdOf("user-2", seatId, 1000)
-                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED, price)));
+                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED, price, null)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         // when
         var thrownBy = assertThatThrownBy(
@@ -160,8 +160,8 @@ class ReserveSeatServiceTest {
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
-                new Reservation(null, "user-2", seatId, ReservationStatus.CANCELLED, 1000)
-                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED, 2000)));
+                new Reservation(null, "user-2", seatId, ReservationStatus.CANCELLED, 1000, null)
+                , new Reservation(null, "user-3", seatId, ReservationStatus.CANCELLED, 2000, null)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         when(reservationRepository.save(any(Reservation.class))).thenReturn(Reservation.holdOf(null, null, 0));
         // when
