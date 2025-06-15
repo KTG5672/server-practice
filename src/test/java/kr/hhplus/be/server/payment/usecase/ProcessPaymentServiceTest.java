@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,14 +15,14 @@ import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.PaymentStatus;
 import kr.hhplus.be.server.payment.entity.exception.ProcessPaymentFailException;
+import kr.hhplus.be.server.point.application.PointUseService;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.exception.CannotPayReservationException;
 import kr.hhplus.be.server.reservation.entity.exception.ReservationNotFoundException;
+import kr.hhplus.be.server.user.domain.exception.NotEnoughPointException;
 import kr.hhplus.be.server.user.domain.exception.UserNotFoundException;
-import kr.hhplus.be.server.user.domain.model.User;
-import kr.hhplus.be.server.user.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,13 +41,13 @@ class ProcessPaymentServiceTest {
     ReservationRepository reservationRepository;
 
     @Mock
-    UserRepository userRepository;
-
-    @Mock
     LockManager lockManager;
 
     @Mock
     ReservationHoldManager reservationHoldManager;
+
+    @Mock
+    PointUseService pointUseService;
 
     ProcessPaymentService processPaymentService;
     PaymentFailHandler paymentFailHandler;
@@ -55,7 +56,7 @@ class ProcessPaymentServiceTest {
     void setUp() {
         paymentFailHandler = new PaymentFailHandler(paymentRepository);
         processPaymentService = new ProcessPaymentService(paymentRepository, reservationRepository,
-            userRepository, paymentFailHandler, lockManager, reservationHoldManager);
+            paymentFailHandler, lockManager, reservationHoldManager, pointUseService);
 
     }
 
@@ -76,10 +77,6 @@ class ProcessPaymentServiceTest {
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
-
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(2_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         Payment mockPayment = Payment.processOf(userId, reservationId, price);
         when(paymentRepository.save(any())).thenReturn(mockPayment);
@@ -121,44 +118,7 @@ class ProcessPaymentServiceTest {
 
 
     /**
-     * 유저 정보의 결제에서 사용되는지 검증한다.
-     */
-    @Test
-    @DisplayName("결제시 유저 정보를 조회하여 포인트를 차감한다")
-    void 결제시_유저_정보를_조회해_포인트를_차감한다() {
-        // given
-        Long reservationId = 1L;
-        String userId = "user-1";
-        Long seatId = 3L;
-        int price = 1000;
-
-        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
-
-        when(reservationRepository.findById(reservationId)).thenReturn(
-            Optional.of(Reservation.holdOf(userId, seatId, price))
-        );
-
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(2_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-        Payment mockPayment = Payment.processOf(userId, reservationId, price);
-        when(paymentRepository.save(any())).thenReturn(mockPayment);
-
-        ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
-        ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(
-            User.class);
-
-        // when
-        processPaymentService.processPayment(processPaymentCommand);
-        // then
-        verify(userRepository).save(userArgumentCaptor.capture());
-        User resultUser = userArgumentCaptor.getAllValues().get(0);
-        assertEquals(1_000, resultUser.getPoint().getAmount());
-    }
-
-    /**
-     * 결제 시 유저 식별자를 이용하여 유저 조회시 없으면 UserNotFoundException 예외가 발생하는지 검증한다.
+     * 결제 시 유저 식별자를 이용하여 유저 조회시 없으면 ProcessPaymentFailException 예외가 발생하는지 검증한다.
      */
     @Test
     @DisplayName("결제시 유저 정보가 없으면 예외가 발생한다")
@@ -171,11 +131,13 @@ class ProcessPaymentServiceTest {
 
         when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
 
+        Reservation mockReservation = Reservation.holdOf(userId, seatId, price);
         when(reservationRepository.findById(reservationId)).thenReturn(
-            Optional.of(Reservation.holdOf(userId, seatId, price))
+            Optional.of(mockReservation)
         );
 
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        doThrow(UserNotFoundException.class).when(pointUseService).usePoint(userId, price);
+        when(paymentRepository.save(any(Payment.class))).thenReturn(Payment.processOf(userId, reservationId, price));
 
         ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
 
@@ -183,8 +145,7 @@ class ProcessPaymentServiceTest {
         var thrownBy = assertThatThrownBy(
             () -> processPaymentService.processPayment(processPaymentCommand));
         // then
-        thrownBy.isInstanceOf(UserNotFoundException.class)
-            .hasMessageContaining(userId);
+        thrownBy.isInstanceOf(ProcessPaymentFailException.class);
     }
 
     /**
@@ -204,21 +165,18 @@ class ProcessPaymentServiceTest {
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
 
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(3_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
         Payment mockPayment = Payment.processOf(userId, reservationId, price);
         when(paymentRepository.save(any())).thenReturn(mockPayment);
+
+        doThrow(NotEnoughPointException.class).when(pointUseService).usePoint(userId, price);
+
         ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
 
         // when
         var thrownBy = assertThatThrownBy(
             () -> processPaymentService.processPayment(processPaymentCommand));
         // then
-        thrownBy.isInstanceOf(ProcessPaymentFailException.class)
-            .hasMessageContaining(price + "")
-            .hasMessageContaining(3000 + "");
+        thrownBy.isInstanceOf(ProcessPaymentFailException.class);
     }
 
     /**
@@ -239,11 +197,6 @@ class ProcessPaymentServiceTest {
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
-
-        // 유저 정보 세팅
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(2_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         Payment mockPayment = Payment.processOf(userId, reservationId, price);
         when(paymentRepository.save(any())).thenReturn(mockPayment);
@@ -283,11 +236,6 @@ class ProcessPaymentServiceTest {
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
 
-        // 유저 정보 세팅
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(2_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
         Payment mockPayment = Payment.processOf(userId, reservationId, price);
         when(paymentRepository.save(any())).thenReturn(mockPayment);
 
@@ -324,13 +272,10 @@ class ProcessPaymentServiceTest {
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
 
-        // 유저 정보 세팅
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(2_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
         Payment mockPayment = Payment.processOf(userId, reservationId, price);
         when(paymentRepository.save(any())).thenReturn(mockPayment);
+
+        doThrow(UserNotFoundException.class).when(pointUseService).usePoint(userId, price);
 
         ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
         ArgumentCaptor<Payment> paymentArgumentCaptor = ArgumentCaptor.forClass(
@@ -366,12 +311,6 @@ class ProcessPaymentServiceTest {
             Optional.of(reservation)
         );
 
-
-        // 유저 정보 세팅
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(2_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
         ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
 
         // when
@@ -401,11 +340,6 @@ class ProcessPaymentServiceTest {
         when(reservationRepository.findById(reservationId)).thenReturn(
             Optional.of(Reservation.holdOf(userId, seatId, price))
         );
-
-        // 유저 정보 세팅
-        User user = User.of(userId, "test@test.com", "1234");
-        user.chargePoint(2_000);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         Payment mockPayment = Payment.processOf(userId, reservationId, price);
         when(paymentRepository.save(any())).thenReturn(mockPayment);

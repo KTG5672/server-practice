@@ -4,15 +4,13 @@ import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.exception.ProcessPaymentFailException;
+import kr.hhplus.be.server.point.application.PointUseService;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.ReservationStatus;
 import kr.hhplus.be.server.reservation.entity.exception.CannotPayReservationException;
 import kr.hhplus.be.server.reservation.entity.exception.ReservationNotFoundException;
-import kr.hhplus.be.server.user.domain.exception.UserNotFoundException;
-import kr.hhplus.be.server.user.domain.model.User;
-import kr.hhplus.be.server.user.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,21 +24,21 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
     public static final String PAYMENT_LOCK_PREFIX = "payment:";
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
-    private final UserRepository userRepository;
     private final PaymentFailHandler paymentFailHandler;
     private final LockManager lockManager;
     private final ReservationHoldManager reservationHoldManager;
+    private final PointUseService pointUseService;
 
     public ProcessPaymentService(PaymentRepository paymentRepository,
-        ReservationRepository reservationRepository, UserRepository userRepository,
-        PaymentFailHandler paymentFailHandler, LockManager lockManager,
-        ReservationHoldManager reservationHoldManager) {
+        ReservationRepository reservationRepository, PaymentFailHandler paymentFailHandler,
+        LockManager lockManager, ReservationHoldManager reservationHoldManager,
+        PointUseService pointUseService) {
         this.paymentRepository = paymentRepository;
         this.reservationRepository = reservationRepository;
-        this.userRepository = userRepository;
         this.paymentFailHandler = paymentFailHandler;
         this.lockManager = lockManager;
         this.reservationHoldManager = reservationHoldManager;
+        this.pointUseService = pointUseService;
     }
 
     /**
@@ -65,7 +63,6 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
         try {
             // 1. 필요 정보 조회 및 검증
             Reservation reservation = getReservation(reservationId);
-            User user = getUser(userId);
             int price = reservation.getPrice();
             validateReservationStatus(reservation);
 
@@ -74,7 +71,7 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
 
             // 3. 결제
             try {
-                useUserPoint(user, price);
+                pointUseService.usePoint(userId, price);
             } catch (RuntimeException e) {
                 // 실패 시 상태(FAIL) 업데이트
                 paymentFailHandler.handlePaymentFailed(saved);
@@ -114,16 +111,6 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
     private void handlePaymentSuccess(Payment payment) {
         payment.success();
         paymentRepository.save(payment);
-    }
-
-    private void useUserPoint(User user, int price) {
-        user.usePoint(price);
-        userRepository.save(user);
-    }
-
-    private User getUser(String userId) {
-        return userRepository.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     private Reservation getReservation(Long reservationId) {
