@@ -1,5 +1,11 @@
 package kr.hhplus.be.server.payment.entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
@@ -7,15 +13,30 @@ import java.time.LocalDateTime;
  * - 진행 중 결재 상태 객체를 반환하는 정적 팩토리 메서드 제공
  * - 상태 (결제완료/실패) 변경 기능
  */
+@Entity
+@Table(name = "payments")
 public class Payment {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+
+    @Column(name = "user_id", nullable = false)
     private String userId;
+
+    @Column(name = "reservation_id", nullable = false)
     private Long reservationId;
+
+    @Column(name = "amount", nullable = false)
     private long amount;
+
+    @Column(name = "status", nullable = false)
     private PaymentStatus stats;
+
+    @Column(name = "payment_at")
     private LocalDateTime paymentAt;
 
+    protected Payment() {}
 
     public Payment(Long id, String userId, Long reservationId, long amount, PaymentStatus stats,
         LocalDateTime paymentAt) {

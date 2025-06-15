@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.common.application.lock;
+package kr.hhplus.be.server.common.lock.application;
 
 import java.time.Duration;
 

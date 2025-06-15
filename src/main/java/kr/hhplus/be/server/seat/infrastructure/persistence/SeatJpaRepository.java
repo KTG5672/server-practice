@@ -8,8 +8,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class SeatJpaRepository implements SeatRepository {
 
+    private final SeatJpaDataRepository seatJpaDataRepository;
+
+    public SeatJpaRepository(SeatJpaDataRepository seatJpaDataRepository) {
+        this.seatJpaDataRepository = seatJpaDataRepository;
+    }
+
     @Override
     public Optional<Seat> findById(Long id) {
-        return Optional.empty();
+        return seatJpaDataRepository.findById(id);
     }
 }

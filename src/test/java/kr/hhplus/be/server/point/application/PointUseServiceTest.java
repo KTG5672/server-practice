@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
-import kr.hhplus.be.server.common.application.lock.LockManager;
+import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.point.domain.model.PointTransactionHistory;
 import kr.hhplus.be.server.point.domain.model.TransactionType;
 import kr.hhplus.be.server.point.domain.repository.PointTransactionHistoryRepository;
@@ -122,8 +122,8 @@ class PointUseServiceTest {
         // when
         pointUseService.usePoint(user.getId(), useAmount);
         // then
-        verify(lockManager).lock(user.getId());
-        verify(lockManager).unlock(user.getId());
+        verify(lockManager).lock("point:" + user.getId());
+        verify(lockManager).unlock("point:" + user.getId());
 
     }
 }
