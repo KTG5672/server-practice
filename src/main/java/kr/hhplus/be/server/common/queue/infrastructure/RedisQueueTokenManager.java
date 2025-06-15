@@ -81,7 +81,7 @@ public class RedisQueueTokenManager implements QueueTokenManager {
      */
     @Override
     public void leaveQueue(String token) {
-        redisTemplate.opsForZSet().remove("wait_queue", token);
-        redisTemplate.delete("queue:token:" + token);
+        redisTemplate.opsForZSet().remove(WAIT_QUEUE_KEY, token);
+        redisTemplate.delete(TOKEN_KEY_PREFIX + token);
     }
 }
