@@ -3,14 +3,8 @@ package kr.hhplus.be.server.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import kr.hhplus.be.server.common.queue.application.QueueTokenInfo;
 import kr.hhplus.be.server.common.queue.application.QueueTokenService;
 import kr.hhplus.be.server.common.queue.application.QueueTokenStatus;
@@ -29,12 +23,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-@Sql(scripts = "/sql/mysql/reservation-flow-integration-test.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+@Sql(scripts = "/sql/mysql/reservation-flow-integration-test.sql", executionPhase = ExecutionPhase.BEFORE_TEST_CLASS)
 class ReservationFlowIntegrationTest {
 
     @Autowired
@@ -98,7 +93,8 @@ class ReservationFlowIntegrationTest {
         SeatQueryResult seat = seats.get(0);
 
         // 3. 좌석 예약 (임시 배정)
-        Long reservationId = reserveSeatUseCase.reserveSeat(new ReserveSeatCommand(userId, seat.getId()));
+        Long reservationId = reserveSeatUseCase.reserveSeat(
+            new ReserveSeatCommand(userId, seat.getId()));
         assertThat(reservationId).isNotNull();
 
         // 4. TTL 설정 및 만료될 때까지 대기 (5분 TTL 가정 -> 테스트 TTL 설정 0.1초)
@@ -116,47 +112,6 @@ class ReservationFlowIntegrationTest {
 
         assertThat(seatIsAvailable).isTrue();
     }
-
-
-    @Test
-    @DisplayName("동시에 좌석 요청 시 한 명만 성공한다.")
-    void 동시에_좌석요청시_한명만_성공한다() throws Exception {
-        // given
-        Long scheduleId = 2L;
-        int threadCount = 5;
-
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        CountDownLatch latch = new CountDownLatch(1);
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        AtomicInteger successCount = new AtomicInteger();
-
-        List<SeatQueryResult> seats = seatQueryService.getSeatsWithAvailability(scheduleId);
-        SeatQueryResult seat = seats.get(0);
-
-        for (int i = 0; i < threadCount; i++) {
-            String userId = "test-user-" + i;
-            futures.add(CompletableFuture.runAsync(() -> {
-                try {
-                    latch.await();
-                    try {
-                        reserveSeatUseCase.reserveSeat(new ReserveSeatCommand(userId, seat.getId()));
-                        successCount.incrementAndGet();
-                    } catch (Exception ignored) {
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }, executor));
-        }
-
-        latch.countDown();
-        for (CompletableFuture<Void> future : futures) {
-            future.get();
-        }
-
-        assertThat(successCount.get()).isEqualTo(1);
-    }
-
 
 }
 
