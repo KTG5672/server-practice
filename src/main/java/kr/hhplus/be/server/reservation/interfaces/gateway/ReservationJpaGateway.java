@@ -36,4 +36,10 @@ public class ReservationJpaGateway implements ReservationRepository {
         return reservationJpaDataRepository.findByStatus(status);
     }
 
+    @Override
+    public int updateReservationStatusByIdAndStatus(Long id, ReservationStatus status,
+        ReservationStatus newStatus) {
+        return reservationJpaDataRepository.updateReservationStatusByIdAndStatus(id, status, newStatus);
+    }
+
 }

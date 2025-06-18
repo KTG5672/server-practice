@@ -47,3 +47,30 @@
 - 상세 테스트 코드
   - [PointConcurrencyTest.java](../src/test/java/kr/hhplus/be/server/integration/concurrency/PointConcurrencyTest.java)
     - 동시에 여러 포인트 사용 요청 시 잔여 포인트는 0과 같거나 커야한다.
+- 결과
+  ![img.png](img/point-concurrency-test.png)
+---
+
+## 3️⃣ 좌석 임시 배정 해제 스케줄러 실행 시 데이터 정합성 문제
+### 문제 상황 및 내부 구조
+
+- 좌석 임시 배정 해제 스케줄러에서 임시배정 상태를 해제하는 과정에서 결제와 동시 실행 시 결제 완료된 건들도 스케줄러에서 취소 처리 시킬 가능성이 존재한다.
+- 임시배정 해제 스케줄러는 예약 상태가 HOLD(임시배정) 인 예약 건들을 조회 후 Redis 에서 TTL(5분)로 만료된 건들을 취소 상태로 UPDATE
+- 결제 진행 시 예약 상태가 HOLD(임시배정) 이고 Redis 에 존재하는지 체크하고 포인트 차감 후 COMPLETED(완료) 상태로 UPDATE
+
+### 해결 전략
+
+- 하나의 예약 건에 대하여 임시배정 해제 스케줄러와 결제 진행이 충돌될 경우가 낮아 조건부 UPDATE 로 동시성 제어
+  - **조건부 UPDATE**
+- 트랜잭션 격리 수준은 임시배정인 건들을 처음 한번 조회만 하므로 Dirty Read 만 방지, READ COMMITTED 로 설정
+  - **트랜잭션 격리 수준 : READ COMMITED**
+- 데드락 방지
+  - **조건부 UPDATE 사용으로 데이터의 잠금이 최소화 되어 타임아웃 생략**
+
+### 테스트 결과
+- 상세 테스트 코드
+  - [ReservationExpirationConcurrencyTest](../src/test/java/kr/hhplus/be/server/integration/concurrency/ReservationExpirationConcurrencyTest.java)
+    - 동시에 여러 포인트 사용 요청 시 잔여 포인트는 0과 같거나 커야한다.
+
+- 결과
+  ![img.png](img/reservation-expiration-concurrencyTest.png)
