@@ -37,6 +37,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("org.springframework.retry:spring-retry")
 
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
+	testAnnotationProcessor("org.projectlombok:lombok")
     // DB
 	runtimeOnly("com.mysql:mysql-connector-j")
 

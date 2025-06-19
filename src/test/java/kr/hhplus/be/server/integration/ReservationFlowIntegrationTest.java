@@ -51,6 +51,7 @@ class ReservationFlowIntegrationTest {
     }
 
     @Test
+    @DisplayName("토큰발급/예약요청/결제처리 전체 흐름 테스트")
     void 토큰_발급_예약_요청_결제_처리_전체_흐름_테스트() {
         // given
         String userId = "test-user";

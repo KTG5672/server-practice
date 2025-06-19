@@ -67,7 +67,7 @@ class ReservationExpirationConcurrencyTest {
     @DisplayName("좌석 임시 배정 해제 스케줄러와 결제가 동시에 실행될 때 결제가 완료된 것들이 취소처리 되면 안된다")
     void 좌석_임시_배정_해제_스케줄러와_결제가_동시에_실행될때_결제가_완료된것이_취소처리_되면_안된다() throws Exception {
         // given
-        String userId = "test-user-";
+        String userId = "reservation-expiration-test-user-";
         List<Long> reservationIds = new ArrayList<>();
 
         int threadCount = 12;
@@ -77,7 +77,7 @@ class ReservationExpirationConcurrencyTest {
 
         // 예약 6건 DB, Redis 임시배정 저장
         for (int i = 0; i < 6; i++) {
-            Long reservationId = reserveSeatUseCase.reserveSeat(new ReserveSeatCommand(userId + (i + 1), (long) (i + 4)));
+            Long reservationId = reserveSeatUseCase.reserveSeat(new ReserveSeatCommand(userId + (i + 1), (long) (i + 1001)));
             reservationIds.add(reservationId);
         }
         // when

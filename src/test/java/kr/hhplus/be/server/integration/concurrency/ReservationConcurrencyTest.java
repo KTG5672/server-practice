@@ -48,7 +48,7 @@ class ReservationConcurrencyTest {
     @DisplayName("동시에 여러명이 하나의 좌석 예약 요청 시 한 명만 성공한다.")
     void 동시에_여러명이_하나의_좌석_예약_요청시_한명만_성공한다() throws Exception {
         // given
-        Long scheduleId = 2L;
+        Long scheduleId = 2001L;
         int threadCount = 10;
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -96,7 +96,7 @@ class ReservationConcurrencyTest {
     @DisplayName("동시에 여러명이 여러개의 좌석에 각각 예약 요청 시 한 명씩만 성공한다.")
     void 동시에_여러명이_여러개의_좌석에_각각_예약_요청시_한명씩만_성공한다() throws Exception {
         // given
-        Long scheduleId = 2L;
+        Long scheduleId = 2001L;
         int threadCount = 10;
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
