@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.payment.intefaces.gateway;
+package kr.hhplus.be.server.payment.interfaces.gateway;
 
 import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;

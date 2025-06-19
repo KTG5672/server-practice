@@ -1,31 +1,32 @@
 package kr.hhplus.be.server.point.application;
 
-import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.point.domain.model.PointTransactionHistory;
 import kr.hhplus.be.server.point.domain.model.TransactionType;
 import kr.hhplus.be.server.point.domain.repository.PointTransactionHistoryRepository;
 import kr.hhplus.be.server.user.domain.exception.UserNotFoundException;
 import kr.hhplus.be.server.user.domain.model.User;
 import kr.hhplus.be.server.user.domain.repository.UserRepository;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 유저의 포인트 충전 로직을 수행하는 비지니스 서비스
+ * - 낙관적 락을 사용하여 포인트 충전요청 동시성 제어
  */
 @Service
+@Transactional(isolation = Isolation.READ_COMMITTED)
 public class PointChargeService {
 
     private final UserRepository userRepository;
     private final PointTransactionHistoryRepository pointTransactionHistoryRepository;
-    private final LockManager lockManager;
 
     public PointChargeService(UserRepository userRepository,
-        PointTransactionHistoryRepository pointTransactionHistoryRepository,
-        LockManager lockManager) {
+        PointTransactionHistoryRepository pointTransactionHistoryRepository) {
         this.userRepository = userRepository;
         this.pointTransactionHistoryRepository = pointTransactionHistoryRepository;
-        this.lockManager = lockManager;
     }
 
     /**
@@ -34,25 +35,20 @@ public class PointChargeService {
      * - 유저 도메인의 chargePoint 메서드를 호출하여 포인트를 충전한다.
      * - 변경된 유저 정보를 저장한다.
      * - 충전 내역을 저장한다.
-     * - LockManager 를 사용하여 동시성 처리
+     * - 낙관전 락을 이용하여 동시성 제어 User.version, 재시도 3번
      * @param userId 유저 ID
      * @param chargePoint 충전 포인트
      */
-    @Transactional
+    @Retryable(
+        retryFor = ObjectOptimisticLockingFailureException.class)
     public void chargePoint(String userId, long chargePoint) {
         User user = userRepository.findById(userId).orElseThrow(() ->
             new UserNotFoundException(userId));
-        lockManager.lock("point:" + userId);
-        try {
-            user.chargePoint(chargePoint);
-            userRepository.save(user);
-        } finally {
-            lockManager.unlock("point:" + userId);
-        }
+        user.chargePoint(chargePoint);
+        userRepository.save(user);
 
         PointTransactionHistory pointTransactionHistory = PointTransactionHistory.of(userId,
             chargePoint, TransactionType.CHARGE);
         pointTransactionHistoryRepository.save(pointTransactionHistory);
     }
-
 }
