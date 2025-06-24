@@ -18,3 +18,6 @@
 - [🌐 인프라 구조도](/docs/infra-structure.md)
 
 ---
+
+## 🔥이슈
+- [동시성 이슈](/docs/concurrency-issue.md)

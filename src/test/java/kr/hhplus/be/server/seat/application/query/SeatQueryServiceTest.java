@@ -38,8 +38,8 @@ class SeatQueryServiceTest {
         Long scheduleId = 1L;
         List<SeatQueryResult> expectedSeats = List.of(
             new SeatQueryResult(1L, "A", 1, 50_000, true)
-            , new SeatQueryResult(2L, "B", 2, 30_000, false)
-            , new SeatQueryResult(3L, "C", 3, 50_000, false));
+            , new SeatQueryResult(2L, "B", 2, 30_000, true)
+            , new SeatQueryResult(3L, "C", 3, 50_000, true));
         when(seatQueryRepository.findSeatsWithAvailability(scheduleId)).thenReturn(expectedSeats);
 
         // when
@@ -50,7 +50,7 @@ class SeatQueryServiceTest {
         assertThat(results).hasSize(3);
         assertThat(results).extracting("zone").containsExactly("A", "B", "C");
         assertThat(results).extracting("no").containsExactly(1, 2, 3);
-        assertThat(results).extracting("available").containsExactly(true, false, false);
+        assertThat(results).extracting("available").containsExactly(true, true, true);
     }
 
     /**

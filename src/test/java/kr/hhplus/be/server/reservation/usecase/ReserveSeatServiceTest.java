@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
@@ -35,9 +34,6 @@ class ReserveSeatServiceTest {
     SeatRepository seatRepository;
 
     @Mock
-    LockManager lockManager;
-
-    @Mock
     ReservationHoldManager reservationHoldManager;
 
     ReserveSeatService reserveSeatService;
@@ -46,7 +42,7 @@ class ReserveSeatServiceTest {
     @BeforeEach
     void setUp() {
         reserveSeatService = new ReserveSeatService(reservationRepository, seatRepository,
-            lockManager, reservationHoldManager);
+            reservationHoldManager);
     }
 
     /**
@@ -59,7 +55,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findById(seatId)).thenReturn(
+        when(seatRepository.findWithLockById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
@@ -88,7 +84,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findById(seatId)).thenReturn(
+        when(seatRepository.findWithLockById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
             Reservation.class);
@@ -111,7 +107,7 @@ class ReserveSeatServiceTest {
         // given
         Long seatId = 1L;
         String userId = "user-1";
-        when(seatRepository.findById(seatId)).thenReturn(Optional.empty());
+        when(seatRepository.findWithLockById(seatId)).thenReturn(Optional.empty());
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         // when
         var thrownBy = assertThatThrownBy(
@@ -131,7 +127,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findById(seatId)).thenReturn(
+        when(seatRepository.findWithLockById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
@@ -156,7 +152,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findById(seatId)).thenReturn(
+        when(seatRepository.findWithLockById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
@@ -168,29 +164,6 @@ class ReserveSeatServiceTest {
         reserveSeatService.reserveSeat(reserveSeatCommand);
         // then
         verify(reservationRepository).save(any());
-    }
-
-    /**
-     * 좌석 예약시 LockManager를 이용하여 Lock을 정상적으로 잠금/해제하는지 검증한다.
-     */
-    @Test
-    @DisplayName("좌석 예약시 좌석 식별자를 key로 Lock을 사용한다.")
-    void 좌석_예약시_좌석_식별자를_key로_Lock을_사용한다() {
-        // given
-        Long seatId = 1L;
-        String userId = "user-1";
-        int price = 1000;
-        when(seatRepository.findById(seatId)).thenReturn(
-            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
-        ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
-        when(reservationRepository.save(any(Reservation.class))).thenReturn(Reservation.holdOf(null, null, 0));
-        // when
-        reserveSeatService.reserveSeat(reserveSeatCommand);
-
-        // then
-        verify(lockManager).lock("seat:" + seatId);
-        verify(lockManager).unlock("seat:" + seatId);
-
     }
 
 }

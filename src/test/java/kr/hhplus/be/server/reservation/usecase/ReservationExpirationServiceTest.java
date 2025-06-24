@@ -46,7 +46,7 @@ class ReservationExpirationServiceTest {
         reservationExpirationService.expireReservation();
 
         // then
-        verify(reservationRepository).save(reservation);
+        verify(reservationRepository).updateReservationStatusByIdAndStatus(anyLong(), any(ReservationStatus.class), any(ReservationStatus.class));
     }
 
     /**
@@ -64,6 +64,6 @@ class ReservationExpirationServiceTest {
         reservationExpirationService.expireReservation();
 
         // then
-        verify(reservationRepository, never()).save(any());
+        verify(reservationRepository, never()).updateReservationStatusByIdAndStatus(any(), any(ReservationStatus.class), any(ReservationStatus.class));
     }
 }

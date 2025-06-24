@@ -9,8 +9,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import kr.hhplus.be.server.point.domain.model.Point;
 import kr.hhplus.be.server.user.domain.exception.NotEnoughPointException;
+import org.hibernate.annotations.ColumnDefault;
 
 /**
  * 유저 도메인 - 포인트 충전/사용 기능 제공
@@ -35,6 +37,10 @@ public class User {
         column = @Column(name = "point"))
     })
     private Point point;
+
+    @Version
+    @ColumnDefault(value = "1")
+    private long version;
 
     protected User() {}
 
@@ -94,5 +100,9 @@ public class User {
 
     public Point getPoint() {
         return point;
+    }
+
+    public long getVersion() {
+        return version;
     }
 }
