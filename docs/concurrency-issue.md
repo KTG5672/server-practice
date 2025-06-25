@@ -70,7 +70,7 @@
 ### 테스트 결과
 - 상세 테스트 코드
   - [ReservationExpirationConcurrencyTest](../src/test/java/kr/hhplus/be/server/integration/concurrency/ReservationExpirationConcurrencyTest.java)
-    - 동시에 여러 포인트 사용 요청 시 잔여 포인트는 0과 같거나 커야한다.
+    - 좌석 임시 배정 해제 스케줄러와 결제가 동시에 실행될 때 결제가 완료된 것들이 취소처리 되면 안된다.
 
 - 결과
   ![img.png](img/reservation-expiration-concurrencyTest.png)
