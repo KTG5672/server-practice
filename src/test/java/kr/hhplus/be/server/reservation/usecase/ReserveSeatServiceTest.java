@@ -55,7 +55,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findWithLockById(seatId)).thenReturn(
+        when(seatRepository.findById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
@@ -84,7 +84,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findWithLockById(seatId)).thenReturn(
+        when(seatRepository.findById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
             Reservation.class);
@@ -107,7 +107,7 @@ class ReserveSeatServiceTest {
         // given
         Long seatId = 1L;
         String userId = "user-1";
-        when(seatRepository.findWithLockById(seatId)).thenReturn(Optional.empty());
+        when(seatRepository.findById(seatId)).thenReturn(Optional.empty());
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         // when
         var thrownBy = assertThatThrownBy(
@@ -127,7 +127,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findWithLockById(seatId)).thenReturn(
+        when(seatRepository.findById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
@@ -152,7 +152,7 @@ class ReserveSeatServiceTest {
         Long seatId = 1L;
         String userId = "user-1";
         int price = 1000;
-        when(seatRepository.findWithLockById(seatId)).thenReturn(
+        when(seatRepository.findById(seatId)).thenReturn(
             Optional.of(new Seat(seatId, 2L, "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(

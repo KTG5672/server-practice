@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.integration.concurrency;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +16,11 @@ import kr.hhplus.be.server.reservation.usecase.ReserveSeatCommand;
 import kr.hhplus.be.server.reservation.usecase.ReserveSeatUseCase;
 import kr.hhplus.be.server.seat.application.dto.SeatQueryResult;
 import kr.hhplus.be.server.seat.application.query.SeatQueryService;
+import kr.hhplus.be.server.seat.entity.exception.SeatNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -40,9 +44,13 @@ class ReservationConcurrencyTest {
     @Autowired
     ReservationJpaDataRepository reservationJpaDataRepository;
 
+    @Autowired
+    RedissonClient redissonClient;
+
     /**
      * 1개의 좌석에 여러명의 동시 예약 요청 시 1명만 성공하는지 검증한다.
      * n (유저) - 1 (좌석)
+     * 분산락으로 변경 후 재검증
      * @throws Exception Exceptions
      */
     @Test
@@ -91,6 +99,7 @@ class ReservationConcurrencyTest {
     /**
      * 여러개의 좌석에 여러명이 각각 동시 예약 요청 시 1명씩만 성공하는지 검증한다.
      * n (유저) - 3 (좌석)
+     * 분산락으로 변경 후 재검증
      * @throws Exception Exceptions
      */
     @Test
@@ -136,5 +145,42 @@ class ReservationConcurrencyTest {
         List<Reservation> results = reservationJpaDataRepository.findAll();
         assertThat(results.size()).isEqualTo(3);
 
+    }
+
+    /**
+     * 트랜잭션이 커밋된 다음 분산락이 제대로 해제 되는지 검증한다.
+     */
+    @Test
+    @DisplayName("트랜잭션 커밋 이후 분산락이 해제된다.")
+    void 트랜잭션_커밋_이후_분산락이_해제된다() {
+        // given
+        ReserveSeatCommand command = new ReserveSeatCommand("user1", 9821L);
+
+        // when
+        reserveSeatUseCase.reserveSeat(command);
+
+        // then
+        RLock lock = redissonClient.getLock("lock:seat:9821");
+        assertThat(lock.isLocked()).isFalse();
+    }
+
+    /**
+     * 트랜잭션이 롤백된 다음 분산락이 제대로 해제 되는지 검증한다.
+     * - SeatNotFoundException 발생 시킨 후 락 해제 여부 검증
+     */
+    @Test
+    @DisplayName("트랜잭션 롤백 이후 분산락이 해제된다.")
+    void 트랜잭션_롤백_이후_분산락이_해제된다() {
+        // given
+        ReserveSeatCommand command = new ReserveSeatCommand("user1", 1000000L);
+
+        // when
+        var throwableAssert = assertThatThrownBy(
+            () -> reserveSeatUseCase.reserveSeat(command));
+
+        // then
+        throwableAssert.isInstanceOf(SeatNotFoundException.class);
+        RLock lock = redissonClient.getLock("lock:seat:1000000");
+        assertThat(lock.isLocked()).isFalse();
     }
 }

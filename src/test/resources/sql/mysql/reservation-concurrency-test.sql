@@ -9,3 +9,6 @@ INSERT INTO concert_seats (id, schedule_id, zone, no, price)
 VALUES (2003, 2001, 'A', 3, 10000);
 INSERT INTO concert_seats (id, schedule_id, zone, no, price)
 VALUES (2004, 2001, 'A', 3, 10000);
+
+INSERT INTO concert_seats (id, schedule_id, zone, no, price)
+VALUES (9821, 2001, 'A', 3, 10000);
