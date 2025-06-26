@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import kr.hhplus.be.server.payment.entity.Payment;
+import kr.hhplus.be.server.payment.entity.PaymentStatus;
 import kr.hhplus.be.server.payment.interfaces.gateway.PaymentJpaDataRepository;
 import kr.hhplus.be.server.payment.usecase.ProcessPaymentCommand;
 import kr.hhplus.be.server.payment.usecase.ProcessPaymentService;
@@ -88,7 +89,7 @@ class ReservationExpirationConcurrencyTest {
             executor.submit(() -> {
                 try {
                     processPaymentService.processPayment(
-                        new ProcessPaymentCommand(userId + (reservationId - 3), reservationId));
+                        new ProcessPaymentCommand(userId + (reservationId + 1), reservationId));
                 } catch (Exception payFailedException) {
                     payFailedExceptions.add(payFailedException);
                 } finally {
@@ -123,7 +124,9 @@ class ReservationExpirationConcurrencyTest {
         List<Reservation> cancelledReservation = reservationJpaDataRepository.findByStatus(CANCELLED);
         List<Payment> payments = paymentJpaDataRepository.findAll();
         int payFailedCount = payFailedExceptions.size();
-        int paySuccessCount = payments.size();
+        int paySuccessCount = payments.stream()
+            .filter((payment -> PaymentStatus.SUCCESS.equals(payment.getStatus())))
+            .toList().size();
 
         // 총 결제 시도 횟수 = 저장된 결제 + 결제 실패 횟수
         assertThat(6).isEqualTo((payFailedCount + paySuccessCount));
