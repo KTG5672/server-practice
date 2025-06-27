@@ -30,6 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @ActiveProfiles("test")
 @Sql(scripts = "/sql/mysql/reservation-flow-integration-test.sql", executionPhase = ExecutionPhase.BEFORE_TEST_CLASS)
+@Sql(scripts = "/sql/mysql/clear-test-db.sql", executionPhase = ExecutionPhase.AFTER_TEST_CLASS)
 class ReservationFlowIntegrationTest {
 
     @Autowired

@@ -26,9 +26,10 @@ public class PaymentFailHandler {
      * @param payment 결제 도메인
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handlePaymentFailed(Payment payment) {
+    public Long handlePaymentFailed(Payment payment) {
         payment.failed();
-        paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+        return saved.getId();
     }
 
 }

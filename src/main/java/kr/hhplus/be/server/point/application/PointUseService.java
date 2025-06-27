@@ -35,7 +35,7 @@ public class PointUseService {
      * - 유저 도메인의 usePoint 메서드를 호출하여 포인트를 사용한다.
      * - 변경된 유저 정보를 저장한다.
      * - 사용 내역을 저장한다.
-     * - 낙관전 락을 이용하여 동시성 제어 User.version, 재시도 3번
+     * - 낙관적 락을 이용하여 동시성 제어 User.version, 재시도 3번
      * @param userId 유저 ID
      * @param usePoint 사용 포인트
      */

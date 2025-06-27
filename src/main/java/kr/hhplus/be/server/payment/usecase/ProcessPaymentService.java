@@ -1,6 +1,6 @@
 package kr.hhplus.be.server.payment.usecase;
 
-import kr.hhplus.be.server.common.lock.application.LockManager;
+import kr.hhplus.be.server.common.lock.infrastructure.DistributedLock;
 import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.exception.ProcessPaymentFailException;
@@ -18,25 +18,20 @@ import org.springframework.transaction.annotation.Transactional;
  * 결제 프로세스 서비스
  */
 @Service
-@Transactional
 public class ProcessPaymentService implements ProcessPaymentUseCase {
 
-    public static final String PAYMENT_LOCK_PREFIX = "payment:";
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
     private final PaymentFailHandler paymentFailHandler;
-    private final LockManager lockManager;
     private final ReservationHoldManager reservationHoldManager;
     private final PointUseService pointUseService;
 
     public ProcessPaymentService(PaymentRepository paymentRepository,
         ReservationRepository reservationRepository, PaymentFailHandler paymentFailHandler,
-        LockManager lockManager, ReservationHoldManager reservationHoldManager,
-        PointUseService pointUseService) {
+        ReservationHoldManager reservationHoldManager, PointUseService pointUseService) {
         this.paymentRepository = paymentRepository;
         this.reservationRepository = reservationRepository;
         this.paymentFailHandler = paymentFailHandler;
-        this.lockManager = lockManager;
         this.reservationHoldManager = reservationHoldManager;
         this.pointUseService = pointUseService;
     }
@@ -47,10 +42,13 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
      * - PROCESS 결제 상태 생성 저장 -> 성공/실패 여부에 따라 상태 갱신
      * - 결제 실패 (포인트 부족 등) 시 예외 발생 (ProcessPaymentFailException)
      * - 결제 성공 시 포인트 차감, 예약 상태 변경
-     * - 결제 진행 시 LockManager를 이용하여 동시성 처리
+     * - 결제 진행 시 분산락을 이용하여 동시성 처리
+     * - 포인트 사용/충전의 동시성 제어는 낙관적 락으로 처리
      * - 결제 진행 전 임시배정 상태 확인
      * @param processPaymentCommand 결제 진행 입력 값
      */
+    @Transactional
+    @DistributedLock(key = "'lock:payment:user:' + #processPaymentCommand.userId")
     @Override
     public void processPayment(ProcessPaymentCommand processPaymentCommand) {
         Long reservationId = processPaymentCommand.reservationId();
@@ -59,31 +57,26 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
         // Redis 에서 임시배정 만료 확인
         validateReservationExpired(reservationId);
 
-        lockManager.lock(PAYMENT_LOCK_PREFIX + userId);
+        // 1. 필요 정보 조회 및 검증
+        Reservation reservation = getReservation(reservationId);
+        int price = reservation.getPrice();
+        validateReservationStatus(reservation);
+
+        // 2. 결제 상태 진행중으로 생성
+        Payment payment = createProcessingPayment(userId, reservationId, price);
+
+        // 3. 결제
         try {
-            // 1. 필요 정보 조회 및 검증
-            Reservation reservation = getReservation(reservationId);
-            int price = reservation.getPrice();
-            validateReservationStatus(reservation);
-
-            // 2. 결제 상태 진행중으로 저장
-            Payment saved = createAndSaveProcessingPayment(userId, reservationId, price);
-
-            // 3. 결제
-            try {
-                pointUseService.usePoint(userId, price);
-            } catch (RuntimeException e) {
-                // 실패 시 상태(FAIL) 업데이트
-                paymentFailHandler.handlePaymentFailed(saved);
-                throw new ProcessPaymentFailException(saved.getId(), e.getMessage());
-            }
-
-            // 4. 결제 성공 로직
-            handlePaymentSuccess(saved);
-            completeReservation(reservation);
-        } finally {
-            lockManager.unlock(PAYMENT_LOCK_PREFIX + userId);
+            pointUseService.usePoint(userId, price);
+        } catch (RuntimeException e) {
+            // 실패 시 실패로 저장 (트랜잭션 분리)
+            Long paymentId = paymentFailHandler.handlePaymentFailed(payment);
+            throw new ProcessPaymentFailException(paymentId, e.getMessage());
         }
+
+        // 4. 결제 성공 로직
+        handlePaymentSuccess(payment);
+        completeReservation(reservation);
     }
 
     private void validateReservationExpired(Long reservationId) {
@@ -92,9 +85,8 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
         }
     }
 
-    private Payment createAndSaveProcessingPayment(String userId, Long reservationId, int price) {
-        Payment payment = Payment.processOf(userId, reservationId, price);
-        return paymentRepository.save(payment);
+    private Payment createProcessingPayment(String userId, Long reservationId, int price) {
+        return Payment.processOf(userId, reservationId, price);
     }
 
     private void validateReservationStatus(Reservation reservation) {

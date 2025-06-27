@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.reservation.usecase;
 
 import java.util.List;
+import kr.hhplus.be.server.common.lock.infrastructure.DistributedLock;
 import kr.hhplus.be.server.reservation.entity.Reservation;
 import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
@@ -9,14 +10,12 @@ import kr.hhplus.be.server.seat.entity.Seat;
 import kr.hhplus.be.server.seat.entity.SeatRepository;
 import kr.hhplus.be.server.seat.entity.exception.SeatNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 좌석 예약 서비스
  */
 @Service
-@Transactional(isolation = Isolation.READ_COMMITTED, timeout = 10)
 public class ReserveSeatService implements ReserveSeatUseCase {
 
     private final ReservationRepository reservationRepository;
@@ -38,13 +37,14 @@ public class ReserveSeatService implements ReserveSeatUseCase {
      * - 임시 배정 상태를 따로 저장 후 유효시간을 5분
      * @param reserveSeatCommand 좌석 예약 입력
      */
+    @Transactional
+    @DistributedLock(key = "'lock:seat:' + #reserveSeatCommand.seatId")
     @Override
     public Long reserveSeat(ReserveSeatCommand reserveSeatCommand) {
 
         String userId = reserveSeatCommand.userId();
         Long seatId = reserveSeatCommand.seatId();
 
-        // 비관전 락으로 좌석 조회
         int price = getSeatPrice(seatId);
         validateAlreadyReserved(seatId);
 
@@ -58,7 +58,7 @@ public class ReserveSeatService implements ReserveSeatUseCase {
     }
 
     private int getSeatPrice(Long seatId) {
-        Seat seat = seatRepository.findWithLockById(seatId)
+        Seat seat = seatRepository.findById(seatId)
             .orElseThrow(() -> new SeatNotFoundException(seatId));
         return seat.getPrice();
     }
