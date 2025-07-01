@@ -31,20 +31,20 @@ public class Payment {
     private long amount;
 
     @Column(name = "status", nullable = false)
-    private PaymentStatus stats;
+    private PaymentStatus status;
 
     @Column(name = "payment_at")
     private LocalDateTime paymentAt;
 
     protected Payment() {}
 
-    public Payment(Long id, String userId, Long reservationId, long amount, PaymentStatus stats,
+    public Payment(Long id, String userId, Long reservationId, long amount, PaymentStatus status,
         LocalDateTime paymentAt) {
         this.id = id;
         this.userId = userId;
         this.reservationId = reservationId;
         this.amount = amount;
-        this.stats = stats;
+        this.status = status;
         this.paymentAt = paymentAt;
     }
 
@@ -63,14 +63,14 @@ public class Payment {
      * 결제 완료 상태로 변경하는 메서드
      */
     public void success() {
-        stats = PaymentStatus.SUCCESS;
+        status = PaymentStatus.SUCCESS;
     }
 
     /**
      * 결재 실패 상태로 변경하는 메서드
      */
     public void failed() {
-        this.stats = PaymentStatus.FAIL;
+        this.status = PaymentStatus.FAIL;
     }
 
     public Long getId() {
@@ -89,8 +89,8 @@ public class Payment {
         return amount;
     }
 
-    public PaymentStatus getStats() {
-        return stats;
+    public PaymentStatus getStatus() {
+        return status;
     }
 
     public LocalDateTime getPaymentAt() {

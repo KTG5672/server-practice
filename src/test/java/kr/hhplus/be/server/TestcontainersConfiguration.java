@@ -2,6 +2,10 @@ package kr.hhplus.be.server;
 
 import com.redis.testcontainers.RedisContainer;
 import jakarta.annotation.PreDestroy;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -33,6 +37,15 @@ class TestcontainersConfiguration {
 		System.setProperty("spring.data.redis.port", REDIS_CONTAINER.getMappedPort(6379).toString());
 
 
+	}
+
+	@Bean(destroyMethod = "shutdown")
+	public RedissonClient redissonClient() {
+		Config config = new Config();
+		String redisUrl = String.format("redis://%s:%d",
+			REDIS_CONTAINER.getHost(), REDIS_CONTAINER.getFirstMappedPort());
+		config.useSingleServer().setAddress(redisUrl);
+		return Redisson.create(config);
 	}
 
 	@PreDestroy

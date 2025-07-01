@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
-import kr.hhplus.be.server.common.lock.application.LockManager;
 import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.PaymentStatus;
@@ -41,9 +40,6 @@ class ProcessPaymentServiceTest {
     ReservationRepository reservationRepository;
 
     @Mock
-    LockManager lockManager;
-
-    @Mock
     ReservationHoldManager reservationHoldManager;
 
     @Mock
@@ -56,7 +52,7 @@ class ProcessPaymentServiceTest {
     void setUp() {
         paymentFailHandler = new PaymentFailHandler(paymentRepository);
         processPaymentService = new ProcessPaymentService(paymentRepository, reservationRepository,
-            paymentFailHandler, lockManager, reservationHoldManager, pointUseService);
+            paymentFailHandler, reservationHoldManager, pointUseService);
 
     }
 
@@ -88,7 +84,7 @@ class ProcessPaymentServiceTest {
         // when
         processPaymentService.processPayment(processPaymentCommand);
         // then
-        verify(paymentRepository, times(2)).save(paymentArgumentCaptor.capture());
+        verify(paymentRepository, times(1)).save(paymentArgumentCaptor.capture());
         Payment payment = paymentArgumentCaptor.getAllValues().get(0);
         assertEquals(price, payment.getAmount());
     }
@@ -179,43 +175,6 @@ class ProcessPaymentServiceTest {
         thrownBy.isInstanceOf(ProcessPaymentFailException.class);
     }
 
-    /**
-     * 예약, 유저 식별자를 입력 받아 결제 정보(진행중)를 정상적으로 저장하는지 검증한다.
-     */
-    @Test
-    @DisplayName("예약 식별자와 유저 식별자를 입력받아 진행중 상태의 결제 정보를 저장한다.")
-    void 예약_식별자와_유저_식별자를_입력받아_진행중_상태의_결제_정보를_저장한다() {
-        // given
-        Long reservationId = 1L;
-        String userId = "user-1";
-        Long seatId = 3L;
-        int price = 1000;
-
-        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
-
-        // 예약 정보 세팅
-        when(reservationRepository.findById(reservationId)).thenReturn(
-            Optional.of(Reservation.holdOf(userId, seatId, price))
-        );
-
-        Payment mockPayment = Payment.processOf(userId, reservationId, price);
-        when(paymentRepository.save(any())).thenReturn(mockPayment);
-
-        ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
-        ArgumentCaptor<Payment> paymentArgumentCaptor = ArgumentCaptor.forClass(
-            Payment.class);
-
-        // when
-        processPaymentService.processPayment(processPaymentCommand);
-
-        // then
-        verify(paymentRepository, times(2)).save(paymentArgumentCaptor.capture());
-        Payment payment = paymentArgumentCaptor.getAllValues().get(0);
-        assertEquals(reservationId, payment.getReservationId());
-        assertEquals(userId, payment.getUserId());
-        assertThat(payment.getStats()).isEqualTo(PaymentStatus.PROCESS);
-    }
-
 
     /**
      * 결제 성공 시 결제 상태는 SUCCESS로 변경 및 저장 되는지 검증한다.
@@ -247,9 +206,9 @@ class ProcessPaymentServiceTest {
         processPaymentService.processPayment(processPaymentCommand);
 
         // then
-        verify(paymentRepository, times(2)).save(paymentArgumentCaptor.capture());
-        Payment payment = paymentArgumentCaptor.getAllValues().get(1);
-        assertThat(payment.getStats()).isEqualTo(PaymentStatus.SUCCESS);
+        verify(paymentRepository, times(1)).save(paymentArgumentCaptor.capture());
+        Payment payment = paymentArgumentCaptor.getAllValues().get(0);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
     }
 
 
@@ -285,9 +244,9 @@ class ProcessPaymentServiceTest {
         assertThatThrownBy(() -> processPaymentService.processPayment(processPaymentCommand));
 
         // then
-        verify(paymentRepository, times(2)).save(paymentArgumentCaptor.capture());
-        Payment payment = paymentArgumentCaptor.getAllValues().get(1);
-        assertThat(payment.getStats()).isEqualTo(PaymentStatus.FAIL);
+        verify(paymentRepository, times(1)).save(paymentArgumentCaptor.capture());
+        Payment payment = paymentArgumentCaptor.getAllValues().get(0);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAIL);
     }
 
 
@@ -319,39 +278,6 @@ class ProcessPaymentServiceTest {
         // then
         thrownBy.isInstanceOf(CannotPayReservationException.class)
             .hasMessageContaining("COMPLETED");
-    }
-
-
-    /**
-     * 결제 진행시 LockManager를 이용하여 Lock을 정상적으로 잠금/해제하는지 검증한다.
-     */
-    @Test
-    @DisplayName("결제 진행시 유저 식별자를 key로 Lock을 사용한다.")
-    void 결제_진행시_유저_식별자를_key로_Lock을_사용한다() {
-        // given
-        Long reservationId = 1L;
-        String userId = "user-1";
-        Long seatId = 3L;
-        int price = 1000;
-
-        when(reservationHoldManager.isValid(reservationId)).thenReturn(true);
-
-        // 예약 정보 세팅
-        when(reservationRepository.findById(reservationId)).thenReturn(
-            Optional.of(Reservation.holdOf(userId, seatId, price))
-        );
-
-        Payment mockPayment = Payment.processOf(userId, reservationId, price);
-        when(paymentRepository.save(any())).thenReturn(mockPayment);
-        ProcessPaymentCommand processPaymentCommand = new ProcessPaymentCommand(userId, reservationId);
-
-        // when
-        processPaymentService.processPayment(processPaymentCommand);
-
-        // then
-        verify(lockManager).lock("payment:" + userId);
-        verify(lockManager).unlock("payment:" + userId);
-
     }
 
 }
