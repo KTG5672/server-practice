@@ -1,5 +1,8 @@
 package kr.hhplus.be.server.common.lock.infrastructure;
 
+import static org.springframework.util.ObjectUtils.isEmpty;
+
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import kr.hhplus.be.server.common.lock.infrastructure.exception.TryLockFailedException;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -9,6 +12,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -21,6 +25,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class DistributedLockAspect {
 
     private final RedissonClient redissonClient;
+    private final ConcurrentHashMap<String, Expression> expressionCache = new ConcurrentHashMap<>();
 
 
     public DistributedLockAspect(RedissonClient redissonClient) {
@@ -49,21 +54,17 @@ public class DistributedLockAspect {
             TransactionSynchronizationManager.registerSynchronization(getSynchronization(lock));
             return joinPoint.proceed();
         } catch (Throwable throwable) {
-            if (isTransactionActive()) {
-                throw throwable;
-            }
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
-                throw throwable;
             }
+            throw throwable;
         }
-
-        return joinPoint.proceed();
     }
 
     private String getLockKey(ProceedingJoinPoint joinPoint,
         DistributedLock distributedLock) {
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+        String key = distributedLock.key();
 
         // 1. SpEL 표현식 파서를 생성
         ExpressionParser parser = new SpelExpressionParser();
@@ -71,13 +72,16 @@ public class DistributedLockAspect {
         EvaluationContext context = new StandardEvaluationContext();
         // 3. 현재 AOP 타겟 메서드의 파라미터 이름과 값들을 꺼냄
         String[] paramNames = methodSignature.getParameterNames();
+        if (isEmpty(paramNames)) {
+            return key;
+        }
         // 4. 각 파라미터 이름에 대해 context 값 매핑
         Object[] args = joinPoint.getArgs();
         for (int i = 0; i < paramNames.length; i++) {
             context.setVariable(paramNames[i], args[i]);
         }
         // 5. 파싱하여 문자열로 반환
-        return parser.parseExpression(distributedLock.key()).getValue(context, String.class);
+        return getExpression(key, parser).getValue(context, String.class);
     }
 
     private TransactionSynchronization getSynchronization(RLock lock) {
@@ -101,6 +105,10 @@ public class DistributedLockAspect {
         } finally {
             lock.unlock();
         }
+    }
+
+    private Expression getExpression(String key, ExpressionParser parser) {
+        return expressionCache.computeIfAbsent(key, parser::parseExpression);
     }
 
 }
