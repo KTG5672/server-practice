@@ -2,10 +2,14 @@ package kr.hhplus.be.server.seat.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import kr.hhplus.be.server.schedule.entity.Schedule;
 
 @Entity
 @Table(name = "concert_seats")
@@ -15,8 +19,9 @@ public class Seat {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(name = "schedule_id", nullable = false)
-    private Long scheduleId;
+    @JoinColumn(name = "schedule_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Schedule schedule;
 
     @Column(name = "zone")
     private String zone;
@@ -29,9 +34,9 @@ public class Seat {
 
     protected Seat() {}
 
-    public Seat(Long id, Long scheduleId, String zone, int no, int price) {
+    public Seat(Long id, Schedule schedule, String zone, int no, int price) {
         this.id = id;
-        this.scheduleId = scheduleId;
+        this.schedule = schedule;
         this.zone = zone;
         this.no = no;
         this.price = price;
@@ -41,8 +46,8 @@ public class Seat {
         return id;
     }
 
-    public Long getScheduleId() {
-        return scheduleId;
+    public Schedule getSchedule() {
+        return schedule;
     }
 
     public String getZone() {
