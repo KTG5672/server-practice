@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import kr.hhplus.be.server.concert.application.ConcertSoldOutRankManager;
+import kr.hhplus.be.server.concert.application.SoldOutRankManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,13 +18,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-class RedisConcertSoldOutRankManagerTest {
+class RedisSoldOutRankManagerTest {
 
     @Autowired
     RedisTemplate<String, String> redisTemplate;
 
     @Autowired
-    ConcertSoldOutRankManager concertSoldOutRankManager;
+    SoldOutRankManager soldOutRankManager;
 
     static final String RANK_KEY = "ranking:soldout:concert";
 
@@ -41,11 +41,11 @@ class RedisConcertSoldOutRankManagerTest {
     void 매진시_매진시간_기준으로_랭킹이_레디스에_저장된다() {
         // given
         // when
-        concertSoldOutRankManager.recordSoldOut(1L, 1000L);
-        concertSoldOutRankManager.recordSoldOut(2L, 3000L);
-        concertSoldOutRankManager.recordSoldOut(3L, 4000L);
-        concertSoldOutRankManager.recordSoldOut(4L, 5000L);
-        concertSoldOutRankManager.recordSoldOut(5L, 2000L);
+        soldOutRankManager.recordSoldOut(1L, 1000L);
+        soldOutRankManager.recordSoldOut(2L, 3000L);
+        soldOutRankManager.recordSoldOut(3L, 4000L);
+        soldOutRankManager.recordSoldOut(4L, 5000L);
+        soldOutRankManager.recordSoldOut(5L, 2000L);
 
         // then
         Set<String> results = redisTemplate.opsForZSet().range(RANK_KEY, 0, -1);
@@ -61,13 +61,13 @@ class RedisConcertSoldOutRankManagerTest {
     @DisplayName("매진시간 랭킹이 상위인 콘서트 식별자를 조회한다.")
     void 매진시간_랭킹이_상위인_콘서트_식별자를_조회한다() {
         // given
-        concertSoldOutRankManager.recordSoldOut(1L, 1000L);
-        concertSoldOutRankManager.recordSoldOut(2L, 3000L);
-        concertSoldOutRankManager.recordSoldOut(3L, 4000L);
-        concertSoldOutRankManager.recordSoldOut(4L, 5000L);
-        concertSoldOutRankManager.recordSoldOut(5L, 2000L);
+        soldOutRankManager.recordSoldOut(1L, 1000L);
+        soldOutRankManager.recordSoldOut(2L, 3000L);
+        soldOutRankManager.recordSoldOut(3L, 4000L);
+        soldOutRankManager.recordSoldOut(4L, 5000L);
+        soldOutRankManager.recordSoldOut(5L, 2000L);
         // when
-        List<Long> topRankedConcertIds = concertSoldOutRankManager.getTopRankedConcertIds(5);
+        List<Long> topRankedConcertIds = soldOutRankManager.getTopRankedConcertIds(5);
 
         // then
         assertThat(topRankedConcertIds).hasSize(5);

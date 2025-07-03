@@ -1,6 +1,6 @@
 package kr.hhplus.be.server.concert.infrastructure.persistence;
 
-import kr.hhplus.be.server.concert.application.ConcertSoldOutRankManager;
+import kr.hhplus.be.server.concert.application.SoldOutRankManager;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Collections;
@@ -12,12 +12,12 @@ import org.springframework.stereotype.Component;
  * Redis 를 사용한 매진 랭킹 서비스 구현체
  */
 @Component
-public class RedisConcertSoldOutRankManager implements ConcertSoldOutRankManager {
+public class RedisSoldOutRankManager implements SoldOutRankManager {
 
     private final RedisTemplate<String, String> redisTemplate;
     private static final String RANK_KEY = "ranking:soldout:concert";
 
-    public RedisConcertSoldOutRankManager(RedisTemplate<String, String> redisTemplate) {
+    public RedisSoldOutRankManager(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
