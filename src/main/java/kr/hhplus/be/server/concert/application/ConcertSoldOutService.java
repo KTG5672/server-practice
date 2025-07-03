@@ -12,11 +12,13 @@ import kr.hhplus.be.server.payment.entity.exception.PaymentNotFoundException;
 import kr.hhplus.be.server.seat.application.dto.SeatCountQueryResult;
 import kr.hhplus.be.server.seat.application.query.SeatQueryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 콘서트 매진 관리 서비스
  */
 @Service
+@Transactional(readOnly = true)
 public class ConcertSoldOutService {
 
     private final SeatQueryRepository seatQueryRepository;
@@ -45,8 +47,8 @@ public class ConcertSoldOutService {
         SeatCountQueryResult seatCountQueryResult = seatQueryRepository.countSeatsByConcertId(
             concertId);
 
-        Long totalCount = seatCountQueryResult.totalCount();
-        Long completedCount = seatCountQueryResult.completedCount();
+        Long totalCount = seatCountQueryResult.getTotalCount();
+        Long completedCount = seatCountQueryResult.getCompletedCount();
 
         if (totalCount == 0) {
             throw new NotValidConcertException(concertId);

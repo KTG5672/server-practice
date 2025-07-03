@@ -105,8 +105,26 @@ class ConcertSoldOutServiceTest {
         throwableAssert.isInstanceOf(NotValidConcertException.class);
     }
 
-    record SeatCountQueryResultImpl(Long totalCount, Long completedCount) implements
-        SeatCountQueryResult {}
+    static class SeatCountQueryResultImpl implements SeatCountQueryResult {
+
+        private final Long totalCount;
+        private final Long completedCount;
+
+        public SeatCountQueryResultImpl(Long totalCount, Long completedCount) {
+            this.totalCount = totalCount;
+            this.completedCount = completedCount;
+        }
+
+        @Override
+        public Long getTotalCount() {
+            return totalCount;
+        }
+
+        @Override
+        public Long getCompletedCount() {
+            return completedCount;
+        }
+    }
 
     /**
      * 매진 시 빠른 매진 랭킹을 기록하는지 검증한다.
