@@ -5,5 +5,6 @@ public interface QueueTokenManager {
     QueueTokenInfo issueToken(String userId);
     QueueTokenInfo getTokenInfo(String token);
     void leaveQueue(String token);
+    void moveWaitQueueToActiveQueue();
 
 }

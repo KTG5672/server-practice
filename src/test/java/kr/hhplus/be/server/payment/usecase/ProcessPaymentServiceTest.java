@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessPaymentServiceTest {
@@ -45,6 +46,9 @@ class ProcessPaymentServiceTest {
     @Mock
     PointUseService pointUseService;
 
+    @Mock
+    ApplicationEventPublisher eventPublisher;
+
     ProcessPaymentService processPaymentService;
     PaymentFailHandler paymentFailHandler;
 
@@ -52,7 +56,7 @@ class ProcessPaymentServiceTest {
     void setUp() {
         paymentFailHandler = new PaymentFailHandler(paymentRepository);
         processPaymentService = new ProcessPaymentService(paymentRepository, reservationRepository,
-            paymentFailHandler, reservationHoldManager, pointUseService);
+            paymentFailHandler, reservationHoldManager, pointUseService, eventPublisher);
 
     }
 
