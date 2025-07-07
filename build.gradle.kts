@@ -38,6 +38,7 @@ dependencies {
 	implementation("org.springframework.retry:spring-retry")
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("org.redisson:redisson-spring-boot-starter:3.50.0")
+	implementation ("org.springframework.boot:spring-boot-starter-webflux")
 
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
@@ -51,6 +52,7 @@ dependencies {
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.testcontainers:mysql")
 	testImplementation("com.redis:testcontainers-redis:2.2.2")
+	testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
