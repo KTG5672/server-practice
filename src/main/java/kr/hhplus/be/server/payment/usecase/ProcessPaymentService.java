@@ -11,6 +11,7 @@ import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.ReservationStatus;
 import kr.hhplus.be.server.reservation.entity.exception.CannotPayReservationException;
 import kr.hhplus.be.server.reservation.entity.exception.ReservationNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,15 +26,18 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
     private final PaymentFailHandler paymentFailHandler;
     private final ReservationHoldManager reservationHoldManager;
     private final PointUseService pointUseService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProcessPaymentService(PaymentRepository paymentRepository,
         ReservationRepository reservationRepository, PaymentFailHandler paymentFailHandler,
-        ReservationHoldManager reservationHoldManager, PointUseService pointUseService) {
+        ReservationHoldManager reservationHoldManager, PointUseService pointUseService,
+        ApplicationEventPublisher eventPublisher) {
         this.paymentRepository = paymentRepository;
         this.reservationRepository = reservationRepository;
         this.paymentFailHandler = paymentFailHandler;
         this.reservationHoldManager = reservationHoldManager;
         this.pointUseService = pointUseService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -45,6 +49,7 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
      * - 결제 진행 시 분산락을 이용하여 동시성 처리
      * - 포인트 사용/충전의 동시성 제어는 낙관적 락으로 처리
      * - 결제 진행 전 임시배정 상태 확인
+     * - 결제 성공 이벤트 발행
      * @param processPaymentCommand 결제 진행 입력 값
      */
     @Transactional
@@ -77,6 +82,8 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
         // 4. 결제 성공 로직
         handlePaymentSuccess(payment);
         completeReservation(reservation);
+        // 5. 이벤트 발행
+        eventPublisher.publishEvent(new PaymentSuccessEvent(payment.getId(), reservation.getSeatId()));
     }
 
     private void validateReservationExpired(Long reservationId) {

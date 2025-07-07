@@ -2,10 +2,12 @@ package kr.hhplus.be.server.reservation.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Optional;
 import kr.hhplus.be.server.reservation.entity.Reservation;
@@ -13,6 +15,7 @@ import kr.hhplus.be.server.reservation.entity.ReservationHoldManager;
 import kr.hhplus.be.server.reservation.entity.ReservationRepository;
 import kr.hhplus.be.server.reservation.entity.ReservationStatus;
 import kr.hhplus.be.server.reservation.entity.exception.AlreadyReservedSeatException;
+import kr.hhplus.be.server.schedule.entity.Schedule;
 import kr.hhplus.be.server.seat.entity.Seat;
 import kr.hhplus.be.server.seat.entity.SeatRepository;
 import kr.hhplus.be.server.seat.entity.exception.SeatNotFoundException;
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ReserveSeatServiceTest {
@@ -56,7 +60,7 @@ class ReserveSeatServiceTest {
         String userId = "user-1";
         int price = 1000;
         when(seatRepository.findById(seatId)).thenReturn(
-            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
+            Optional.of(new Seat(seatId, getTestSchedule(), "A", 1, price)));
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
             Reservation.class);
@@ -85,7 +89,7 @@ class ReserveSeatServiceTest {
         String userId = "user-1";
         int price = 1000;
         when(seatRepository.findById(seatId)).thenReturn(
-            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
+            Optional.of(new Seat(seatId, getTestSchedule(), "A", 1, price)));
         ArgumentCaptor<Reservation> reservationArgumentCaptor = ArgumentCaptor.forClass(
             Reservation.class);
         ReserveSeatCommand reserveSeatCommand = new ReserveSeatCommand(userId, seatId);
@@ -128,7 +132,7 @@ class ReserveSeatServiceTest {
         String userId = "user-1";
         int price = 1000;
         when(seatRepository.findById(seatId)).thenReturn(
-            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
+            Optional.of(new Seat(seatId, getTestSchedule(), "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
                 Reservation.holdOf("user-2", seatId, 1000)
@@ -153,7 +157,7 @@ class ReserveSeatServiceTest {
         String userId = "user-1";
         int price = 1000;
         when(seatRepository.findById(seatId)).thenReturn(
-            Optional.of(new Seat(seatId, 2L, "A", 1, price)));
+            Optional.of(new Seat(seatId, getTestSchedule(), "A", 1, price)));
         when(reservationRepository.findBySeatId(seatId)).thenReturn(
             List.of(
                 new Reservation(null, "user-2", seatId, ReservationStatus.CANCELLED, 1000, null)
@@ -164,6 +168,20 @@ class ReserveSeatServiceTest {
         reserveSeatService.reserveSeat(reserveSeatCommand);
         // then
         verify(reservationRepository).save(any());
+    }
+
+    public static Schedule getTestSchedule() {
+        Schedule schedule = null;
+        try {
+            Class<Schedule> scheduleClass = Schedule.class;
+            Constructor<Schedule> constructor = scheduleClass.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            schedule = constructor.newInstance();
+            ReflectionTestUtils.setField(schedule, "id", 2L); // ID 세팅이 필요한 경우
+        } catch (Exception ignored) {
+            fail();
+        }
+        return schedule;
     }
 
 }
