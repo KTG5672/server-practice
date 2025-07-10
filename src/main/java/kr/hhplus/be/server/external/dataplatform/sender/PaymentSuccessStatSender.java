@@ -44,7 +44,7 @@ public class PaymentSuccessStatSender {
         dataPlatformApiClient.sendData(sendDto)
             .subscribe(
                 success -> {},
-                error -> log.error("Payment success stat send error : " + error.getMessage())
+                error -> log.warn("Payment success stat send error : " + error.getMessage())
             );
     }
 
