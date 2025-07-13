@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import kr.hhplus.be.server.common.queue.application.QueueTokenInfo;
+import kr.hhplus.be.server.common.queue.application.QueueTokenManager;
 import kr.hhplus.be.server.common.queue.application.QueueTokenService;
 import kr.hhplus.be.server.common.queue.application.QueueTokenStatus;
 import kr.hhplus.be.server.payment.usecase.ProcessPaymentCommand;
@@ -45,6 +46,8 @@ class ReservationFlowIntegrationTest {
     ReservationExpirationUseCase reservationExpirationUseCase;
     @Autowired
     RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    QueueTokenManager queueTokenManager;
 
     @BeforeEach
     void setUp() {
@@ -60,7 +63,10 @@ class ReservationFlowIntegrationTest {
         // 1. 대기열 토큰 발급
         QueueTokenInfo tokenInfo = queueTokenService.enterQueueAndGetToken(userId);
         assertThat(tokenInfo.token()).isNotNull();
-        assertThat(tokenInfo.status()).isEqualTo(QueueTokenStatus.ACTIVE);
+        queueTokenManager.moveWaitQueueToActiveQueue();
+        QueueTokenInfo token = queueTokenService.getToken(tokenInfo.token());
+
+        assertThat(token.status()).isEqualTo(QueueTokenStatus.ACTIVE);
 
         // 2. 예약 가능한 좌석 조회
         Long scheduleId = 2L;
@@ -88,7 +94,10 @@ class ReservationFlowIntegrationTest {
 
         // 1. 대기열 토큰 발급
         QueueTokenInfo tokenInfo = queueTokenService.enterQueueAndGetToken(userId);
-        assertThat(tokenInfo.status()).isEqualTo(QueueTokenStatus.ACTIVE);
+        queueTokenManager.moveWaitQueueToActiveQueue();
+        QueueTokenInfo token = queueTokenService.getToken(tokenInfo.token());
+
+        assertThat(token.status()).isEqualTo(QueueTokenStatus.ACTIVE);
 
         // 2. 예약 가능한 좌석 조회
         List<SeatQueryResult> seats = seatQueryService.getSeatsWithAvailability(scheduleId);

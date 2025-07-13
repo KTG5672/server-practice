@@ -21,6 +21,9 @@ spring:
       hibernate.timezone.default_storage: NORMALIZE_UTC
       hibernate.jdbc.time_zone: UTC
 
+external-api:
+  data-platform:
+    base-url: http://localhost:8080
 ---
 spring.config.activate.on-profile: local, test
 

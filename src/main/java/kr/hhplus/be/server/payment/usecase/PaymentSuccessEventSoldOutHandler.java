@@ -7,11 +7,11 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
-public class PaymentSuccessEventHandler {
+public class PaymentSuccessEventSoldOutHandler {
 
     private final ConcertSoldOutProcessor concertSoldOutProcessor;
 
-    public PaymentSuccessEventHandler(ConcertSoldOutProcessor concertSoldOutProcessor) {
+    public PaymentSuccessEventSoldOutHandler(ConcertSoldOutProcessor concertSoldOutProcessor) {
         this.concertSoldOutProcessor = concertSoldOutProcessor;
     }
 
