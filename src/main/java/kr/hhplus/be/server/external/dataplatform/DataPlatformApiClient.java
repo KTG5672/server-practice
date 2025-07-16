@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
  */
 @Component
 @Slf4j
-public class DataPlatformApiClient {
+public class DataPlatformApiClient implements DataPlatformClient {
 
     private final WebClient webClient;
 
@@ -32,7 +32,8 @@ public class DataPlatformApiClient {
      * @return Mono<DataPlatformApiResponse> status : 상태, message : 메세지
      * @param <T> 데이터 타입
      */
-    public <T> Mono<DataPlatformApiResponse> sendData(T data) {
+    @Override
+    public <T> Mono<?> sendData(T data) {
 
         DataPlatformApiRequest<T> request = new DataPlatformApiRequest<>(data);
         String uri = "/api/v1/data-platform";

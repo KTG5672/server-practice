@@ -20,6 +20,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@SuppressWarnings("unchecked")
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = WebClientConfig.class)
 @ActiveProfiles("test")
@@ -55,7 +56,7 @@ class DataPlatformApiClientTest {
             webClientBuilder);
 
         // when
-        Mono<DataPlatformApiResponse> response = dataPlatformApiClient.sendData("String value");
+        Mono<DataPlatformApiResponse> response = (Mono<DataPlatformApiResponse>) dataPlatformApiClient.sendData("String value");
 
         // then
         DataPlatformApiResponse result = response.block();
@@ -81,7 +82,7 @@ class DataPlatformApiClientTest {
             webClientBuilder);
 
         // when
-        Mono<DataPlatformApiResponse> response = dataPlatformApiClient.sendData("String value");
+        Mono<DataPlatformApiResponse> response = (Mono<DataPlatformApiResponse>) dataPlatformApiClient.sendData("String value");
         var throwableAssert = assertThatThrownBy(response::block);
 
         // then
