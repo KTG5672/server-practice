@@ -1,7 +1,7 @@
 package kr.hhplus.be.server.external.dataplatform.sender;
 
 import java.time.LocalDateTime;
-import kr.hhplus.be.server.external.dataplatform.DataPlatformApiClient;
+import kr.hhplus.be.server.external.dataplatform.DataPlatformClient;
 import kr.hhplus.be.server.payment.entity.Payment;
 import kr.hhplus.be.server.payment.entity.PaymentRepository;
 import kr.hhplus.be.server.payment.entity.PaymentStatus;
@@ -18,13 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class PaymentSuccessStatSender {
 
-    private final DataPlatformApiClient dataPlatformApiClient;
+    private final DataPlatformClient dataPlatformClient;
     private final PaymentRepository paymentRepository;
 
 
-    public PaymentSuccessStatSender(DataPlatformApiClient dataPlatformApiClient,
+    public PaymentSuccessStatSender(DataPlatformClient dataPlatformClient,
         PaymentRepository paymentRepository) {
-        this.dataPlatformApiClient = dataPlatformApiClient;
+        this.dataPlatformClient = dataPlatformClient;
         this.paymentRepository = paymentRepository;
     }
 
@@ -41,7 +41,7 @@ public class PaymentSuccessStatSender {
 
         PaymentStatDto sendDto = getPaymentSuccessStatDto(paymentId, seatId);
 
-        dataPlatformApiClient.sendData(sendDto)
+        dataPlatformClient.sendData(sendDto)
             .subscribe(
                 success -> {},
                 error -> log.warn("Payment success stat send error : " + error.getMessage())
